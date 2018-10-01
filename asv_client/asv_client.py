@@ -22,6 +22,7 @@ password = "test5243"
 credentials = pika.PlainCredentials(username, password)
 
 num_boats = 5
+boat_info = []
 clusters = []
 clusters_threads = []
 final_paths_threads = []
@@ -43,7 +44,7 @@ class FinalPathsThread(threading.Thread):
 			if len(pose.replace("(","").replace(")","").replace("'","").split(",")) == 2:
 				x = pose.replace("(","").replace(")","").replace("'","").split(",")[0]
 				y = pose.replace("(","").replace(")","").replace("'","").split(",")[1]
-				print(clusters[self.boat_id-1])
+				#print(clusters[self.boat_id-1])
 				if [float(x),float(y)] not in poses_list:
 					#print(" [x] Received ", x, " " , y)
 					poses_list.append([float(x),float(y)])
@@ -83,6 +84,7 @@ class ClustersThread(threading.Thread):
 	def callback_clustering(self, ch, method, properties, body):
 		global clusters
 		poses_list = []
+		poses_list.append([boat_info[self.boat_id-1][2],boat_info[self.boat_id-1][3]])
 		poses_temp = body.decode("utf-8")
 		for pose in poses_temp.split("\n")[0].split(">"):
 			if len(pose.replace("(","").replace(")","").replace("'","").split(",")) == 2:
@@ -92,6 +94,7 @@ class ClustersThread(threading.Thread):
 				if [float(x),float(y)] not in clusters[self.boat_id-1]:
 					poses_list.append([float(x),float(y)])
 		clusters[self.boat_id-1] = poses_list
+		print(clusters[self.boat_id-1])
 		self.publish_to_mq(poses_list)
 		
 	# Sends locations of people found to Rabbit
@@ -147,6 +150,7 @@ def gen_poses():
 		boat_location_x = random.uniform(-200,200)
 		boat_location_y = random.uniform(-200,200)
 		num_people -= 1
+		boat_info.append((boat_speed,boat_capacity,boat_location_x,boat_location_y, boat_id))
 		publish_to_mq((boat_speed,boat_capacity,boat_location_x,boat_location_y, boat_id))
 		
 		

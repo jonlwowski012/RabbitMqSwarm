@@ -31,13 +31,13 @@ def publish_to_mq(datas):
 	for data in datas:
 		entry = str((str(data[0]),str(data[1])))
 		entries = entry + ">" + entries
-	print(entries)
+	#print(entries)
 	# Publish message to outgoing exchange
 	channel.basic_publish(exchange='metaclusters_found',
 							routing_key='key_metaclusters_found',
 							body=entries) 
 	# Indicate delivery of message
-	print(" [ >> ] Sent %r" % entry)
+	#print(" [ >> ] Sent %r" % entry)
 
 
 ### Metaclustering function
@@ -48,7 +48,7 @@ def cmeans_clustering(data):
 		if(data != []):
 				### K-means clustering on Clusters
 				k = num_boats
-				cntr, u, u0, d, jm, p, fpc = fuzz.cluster.cmeans(np.asarray(data).T, k, 2, error=0.005, maxiter=5000, init=None)
+				cntr, u, u0, d, jm, p, fpc = fuzz.cluster.cmeans(np.asarray(data).T, k, 2, error=0.005, maxiter=5000, init=None, seed=1)
 				centroids = []
 				for pt in cntr:
 						centroids.append((pt[0],pt[1])) 
@@ -73,8 +73,9 @@ def callback(ch, method, properties, body):
 			if [float(x),float(y)] not in poses:
 				poses_list.append([float(x),float(y)])
 	poses = poses_list
+	print("Metaclustering clusters of len: ", len(poses))
 	centroids,labels,location_array = cmeans_clustering(poses)
-	print(centroids)
+	#print(centroids)
 	publish_to_mq(centroids)
 
 if __name__ == '__main__':

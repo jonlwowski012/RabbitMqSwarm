@@ -39,7 +39,7 @@ def clustering(poses):
 		ks_copy = list(ks)
 		data = comm.scatter(ks_copy, root=0)
 		### Calculate Clusters
-		kmeans = cluster.KMeans(init='k-means++', n_init=10, n_clusters=int(data))
+		kmeans = cluster.KMeans(init='k-means++', n_init=10, n_clusters=int(data), random_state=1)
 		kmeans.fit(location_array)
 		inertia = kmeans.inertia_
 		min_inertia = comm.allreduce(inertia, op=MPI.MIN)
@@ -51,7 +51,7 @@ def clustering(poses):
 
 	if rank == 0:
 		### Calculate Clusters
-		kmeans = cluster.KMeans(init='k-means++', n_init=10, n_clusters=int(data))
+		kmeans = cluster.KMeans(init='k-means++', n_init=10, n_clusters=int(data), random_state=1)
 		kmeans.fit(location_array)
 		centroids_temp = kmeans.cluster_centers_
 		labels = kmeans.labels_
@@ -65,7 +65,7 @@ def clustering(poses):
 
 		### Get Labels for all people's locations
 		labels = kmeans.labels_ 
-		print(centroids)
+		#print(centroids)
 		return centroids
 
 # Sends locations of clusters found to Rabbit
@@ -79,7 +79,7 @@ def publish_to_mq(datas):
 							routing_key='key_clusters_found',
 							body=entries) 
 	# Indicate delivery of message
-	print(" [ >> ] Sent %r" % entries)
+	#print(" [ >> ] Sent %r" % entries)
 
 
 # Receive messages from UAVs and publish to Clustering
@@ -89,11 +89,12 @@ def callback(ch, method, properties, body):
 	body_temp = body_temp.replace("'","")
 	x = float(body_temp.split(',')[0])
 	y = float(body_temp.split(',')[1])
-	print(" [x] Received ", x, " " , y)
+	#print(" [x] Received ", x, " " , y)
 	if [x,y] not in poses:
 		poses.append([x,y])
-	print("Len Poses: ", len(poses))
-	if len(poses) % 100 == 0:
+	#print("Len Poses: ", len(poses))
+	if len(poses) % 10 == 0:
+		print("Clustering with len: ", len(poses))
 		centroids = clustering(poses)
 		publish_to_mq(centroids)
 
@@ -135,7 +136,7 @@ if __name__ == '__main__':
 				ks_copy = list(ks)
 				data = comm.scatter(ks_copy, root=0)
 				### Calculate Clusters
-				kmeans = cluster.KMeans(init='k-means++', n_init=10, n_clusters=int(data))
+				kmeans = cluster.KMeans(init='k-means++', n_init=10, n_clusters=int(data), random_state=1)
 				kmeans.fit(location_array)
 				inertia = kmeans.inertia_
 				min_inertia = comm.allreduce(inertia, op=MPI.MIN)

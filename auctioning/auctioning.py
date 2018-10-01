@@ -44,9 +44,9 @@ class AuctionThread(threading.Thread):
 				x = pose.replace("(","").replace(")","").replace("'","").split(",")[0]
 				y = pose.replace("(","").replace(")","").replace("'","").split(",")[1]
 				#print(" [x] Received ", x, " " , y)
-				if [float(x),float(y)] not in poses:
-					poses_list.append([float(x),float(y)])
-		poses = poses_list
+				#if [float(x),float(y)] not in poses:
+				poses_list.append([float(x),float(y)])
+		poses = copy.deepcopy(poses_list)
 				#publish_to_mq(centroids)
 			
 	def run(self):
@@ -83,9 +83,9 @@ class ClustersThread(threading.Thread):
 				x = pose.replace("(","").replace(")","").replace("'","").split(",")[0]
 				y = pose.replace("(","").replace(")","").replace("'","").split(",")[1]
 				#print(" [x] Received ", x, " " , y)
-				if [float(x),float(y)] not in poses:
-					poses_list.append([float(x),float(y)])
-		clusters = poses_list
+				#if [float(x),float(y)] not in poses:
+				poses_list.append([float(x),float(y)])
+		clusters = copy.deepcopy(poses_list)
 		
 	def run(self):
 		connection = pika.BlockingConnection(pika.ConnectionParameters(host=self.host, credentials=credentials))
@@ -148,7 +148,7 @@ def distance(p0, p1):
 def auctioning(auction_info, boat_info, clusters_info):
 		#print("Lens: ", len(auction_info), len(boat_info), len(clusters_info))
 		global number_boats
-		boats = range(number_boats)     
+		boats = range(len(boat_info))     
 		assignments = [0]*number_boats
 		boat_info_temp = copy.deepcopy(boat_info)
 
@@ -158,6 +158,7 @@ def auctioning(auction_info, boat_info, clusters_info):
 				min_index = 0
 				for index in boats:
 						meta_pose = (metacluster[0], metacluster[1])
+						print(boat_info,index)
 						boat_pose = (boat_info_temp[index][2],boat_info_temp[index][3])
 						if abs(distance(meta_pose,boat_pose)) < min_value:
 								min_value = abs(distance(meta_pose,boat_pose))
@@ -182,7 +183,8 @@ def auctioning(auction_info, boat_info, clusters_info):
 						if auction_info[min_index][0] == assignments[boat][0] and auction_info[min_index][1] == assignments[boat][1]:
 								clusters.append(cluster)
 				#print("Boat: ", boat, "Clusters: ", clusters)
-				publish_to_mq(boat_info[boat][4],clusters)
+				if len(clusters) > 0:
+					publish_to_mq(boat_info[boat][4],clusters)
 
 
 		#print auction_info
@@ -229,6 +231,7 @@ if __name__ == '__main__':
 		boat_info_temp = copy.deepcopy(boat_info)
 		clusters_temp = copy.deepcopy(clusters)
 		if len(poses_temp) == number_boats and len(boat_info_temp)>0 and len(clusters_temp)>0:
+			print("Auctioning with ", len(boat_info_temp), " boats, ", len(clusters_temp), " clusters, ", len(poses_temp), " metaclusters") 
 			auctioning(poses_temp, boat_info_temp, clusters_temp)
 	
 

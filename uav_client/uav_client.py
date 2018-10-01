@@ -13,6 +13,7 @@ import math
 import numpy as np
 import random
 import pika
+import time
 
 hostname = '129.114.111.193'
 username = "yellow"
@@ -32,12 +33,16 @@ def publish_to_mq(data):
 
 ### Randomly generate peoples poses
 def gen_poses():
-	num_people = 5000
-	while num_people > 0:
-		x = random.uniform(-200,200)
-		y = random.uniform(-200,200)
-		num_people -= 1
-		publish_to_mq((x,y))
+	min_x = -200
+	while(min_x<200):
+		num_people = int(random.uniform(10,20))
+		while num_people > 0:
+			x = random.uniform(min_x,min_x+10)
+			y = random.uniform(-200,200)
+			num_people -= 1
+			publish_to_mq((x,y))
+		min_x += 10
+		time.sleep(3)
 
 ### Main Service Client for UAV
 def uav_service():

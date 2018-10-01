@@ -81,6 +81,7 @@ class TSPThread(threading.Thread):
 				if [float(x),float(y)] not in poses_list:
 					poses_list.append([float(x),float(y)])
 		if len(poses_list) > 0:
+			print("Len: ", len(poses_list), " Id: ", self.boat_id)
 			path = tsp_solver(poses_list)
 			self.publish_to_mq(path)
 			
@@ -94,12 +95,12 @@ class TSPThread(threading.Thread):
 		self.channel.basic_publish(exchange='final_path'+'_'+str(self.boat_id),
 								routing_key='key_final_path'+'_'+str(self.boat_id),
 								body=entries) 
-		print('final_path'+'_'+str(self.boat_id))
+		#print('final_path'+'_'+str(self.boat_id))
 		# Indicate delivery of message
 		#print(" [ >> ] Sent %r" % entries)	
 		
 	def run(self):
-		print(self.topic+"_"+str(self.boat_id))
+		#print(self.topic+"_"+str(self.boat_id))
 		connection = pika.BlockingConnection(pika.ConnectionParameters(host=self.host, credentials=credentials))
 		channel = connection.channel()
 		channel.exchange_declare(exchange=self.topic+"_"+str(self.boat_id), exchange_type='direct')
@@ -168,7 +169,7 @@ def tsp_solver(clusters):
 	path_array = [] 
 	for index in path:
 		path_array.append(clusters[index-1])
-	print(path_array)
+	#print(path_array)
 	return path_array
 
 
