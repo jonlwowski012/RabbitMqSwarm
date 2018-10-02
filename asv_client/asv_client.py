@@ -147,7 +147,7 @@ def gen_poses():
 	while num_people > 0:
 		boat_speed = random.uniform(.2,1.0)
 		boat_capacity = random.uniform(10,150)
-		boat_location_x = random.uniform(-200,200)
+		boat_location_x = random.uniform(-300,-200)
 		boat_location_y = random.uniform(-200,200)
 		num_people -= 1
 		boat_info.append((boat_speed,boat_capacity,boat_location_x,boat_location_y, boat_id))
