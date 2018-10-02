@@ -80,7 +80,7 @@ class TSPThread(threading.Thread):
 				#print(" [x] Received ", x, " " , y)
 				if [float(x),float(y)] not in poses_list:
 					poses_list.append([float(x),float(y)])
-		if len(poses_list) > 0:
+		if len(poses_list) > 2:
 			print("Len: ", len(poses_list), " Id: ", self.boat_id)
 			path = tsp_solver(poses_list)
 			self.publish_to_mq(path)

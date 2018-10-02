@@ -87,8 +87,9 @@ if __name__ == '__main__':
 	colors = ['r','b','g','y','k']
 	viz()
 	while(1):
-		print("len boat_paths: ", len(boat_paths))
-		for i,boat in enumerate(boat_paths):
+		boat_paths_temp = copy.deepcopy(boat_paths)
+		print("len boat_paths: ", len(boat_paths_temp))
+		for i,boat in enumerate(boat_paths_temp):
 			if boat is not None:
 				print("len boat ", i, " ", len(boat))
 				for j,pose in enumerate(boat):

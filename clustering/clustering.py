@@ -26,6 +26,7 @@ username = "yellow"
 password = "test5243"
 credentials = pika.PlainCredentials(username, password)
 poses = []
+prev_poses_len = 0
 
 # Parralel k-means clustering
 def clustering(poses):
@@ -84,7 +85,7 @@ def publish_to_mq(datas):
 
 # Receive messages from UAVs and publish to Clustering
 def callback(ch, method, properties, body):
-	global poses
+	global poses, prev_poses_len
 	body_temp = str(body).replace("(","").replace(")","").replace("b","")
 	body_temp = body_temp.replace("'","")
 	x = float(body_temp.split(',')[0])
@@ -93,10 +94,11 @@ def callback(ch, method, properties, body):
 	if [x,y] not in poses:
 		poses.append([x,y])
 	#print("Len Poses: ", len(poses))
-	if len(poses) % 10 == 0:
+	if len(poses) % 50 == 0 or len(poses) == prev_poses_len:
 		print("Clustering with len: ", len(poses))
 		centroids = clustering(poses)
 		publish_to_mq(centroids)
+		prev_poses_len = len(poses)
 
 
 if __name__ == '__main__':

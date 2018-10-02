@@ -41,8 +41,8 @@ def gen_poses():
 			y = random.uniform(-200,200)
 			num_people -= 1
 			publish_to_mq((x,y))
-		min_x += 10
-		time.sleep(3)
+		min_x += 25
+		time.sleep(1)
 
 ### Main Service Client for UAV
 def uav_service():

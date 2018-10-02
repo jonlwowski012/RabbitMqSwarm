@@ -16,6 +16,7 @@ import time
 import pika
 import threading
 import copy
+import matplotlib.pyplot as plt
 
 hostname = '129.114.111.193'
 username = "yellow"
@@ -147,6 +148,7 @@ def distance(p0, p1):
 ### Call Clustering Service
 def auctioning(auction_info, boat_info, clusters_info):
 		#print("Lens: ", len(auction_info), len(boat_info), len(clusters_info))
+		clusters_auc_pub = []
 		global number_boats
 		boats = range(len(boat_info))     
 		assignments = [0]*number_boats
@@ -158,7 +160,7 @@ def auctioning(auction_info, boat_info, clusters_info):
 				min_index = 0
 				for index in boats:
 						meta_pose = (metacluster[0], metacluster[1])
-						print(boat_info,index)
+						#print(boat_info,index)
 						boat_pose = (boat_info_temp[index][2],boat_info_temp[index][3])
 						if abs(distance(meta_pose,boat_pose)) < min_value:
 								min_value = abs(distance(meta_pose,boat_pose))
@@ -169,7 +171,7 @@ def auctioning(auction_info, boat_info, clusters_info):
 
 		### Calculate which clusters are in the asv assigned metacluster
 		for boat in boats:
-				clusters = []
+				clusters_auc = []
 				metacluster = assignments[boat]
 				for cluster in clusters_info:
 						min_dist = 999999
@@ -181,11 +183,14 @@ def auctioning(auction_info, boat_info, clusters_info):
 										min_dist = abs(distance(meta_pose,cluster_pose))
 										min_index = index
 						if auction_info[min_index][0] == assignments[boat][0] and auction_info[min_index][1] == assignments[boat][1]:
-								clusters.append(cluster)
-				#print("Boat: ", boat, "Clusters: ", clusters)
-				if len(clusters) > 0:
-					publish_to_mq(boat_info[boat][4],clusters)
-
+								clusters_auc.append(cluster)
+				#print("Boat: ", boat, "Clusters: ", clusters_auc)
+				colors = ['r','b','g','y','k']
+				if len(clusters_auc) > 0:
+					clusters_auc_pub.append(clusters_auc)
+		for i in range(len(clusters_auc_pub)):
+			publish_to_mq(boat_info[i][4],clusters_auc_pub[i])
+					
 
 		#print auction_info
 		#print boat_info

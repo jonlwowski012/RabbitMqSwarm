@@ -43,6 +43,7 @@ def callback(ch, method, properties, body):
 				ax.add_artist(circle1)
 				plt.draw()
 				plt.pause(0.01)
+	plt.gcf().clear()
 	#print("Len Poses: ", len(poses))
 
 
@@ -62,6 +63,8 @@ if __name__ == '__main__':
 	channel_in.basic_consume(callback,queue=queue_in_name,no_ack=False)
 
 	# Begin consuming from UAVs
+	plt.draw()
+	plt.pause(0.01)
 	channel_in.start_consuming()
 	
 

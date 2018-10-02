@@ -82,16 +82,16 @@ if __name__ == '__main__':
 	colors = ['r','b','g','y','k']
 	viz()
 	while(1):
-		for boat in clusters:
-			for i,pose in enumerate(poses):
+		for j,boat in enumerate(clusters):
+			for i,pose in enumerate(boat):
 				x = pose[0]
 				y = pose[1]
-				plt.scatter(float(x),float(y),c=colors[i%len(colors)],s=5)
-				circle1=plt.Circle((float(x),float(y)),color=colors[i%len(colors)], radius=60,fill=False)
+				plt.scatter(float(x),float(y),c=colors[j%len(colors)],s=5)
+				circle1=plt.Circle((float(x),float(y)),color=colors[j%len(colors)], radius=10,fill=False)
 				fig = plt.gcf()
 				ax = fig.gca()
 				ax.add_artist(circle1)
-				plt.draw()
+		plt.draw()
 		plt.pause(1.0)
 		plt.gcf().clear()
 	

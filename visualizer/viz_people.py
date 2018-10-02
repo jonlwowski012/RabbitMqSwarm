@@ -41,6 +41,8 @@ def callback(ch, method, properties, body):
 
 if __name__ == '__main__':
 	# Establish incoming connection from UAVs
+	plt.draw()
+	plt.pause(0.01)
 	connection_in = pika.BlockingConnection(pika.ConnectionParameters(host=hostname, credentials=credentials))
 	channel_in = connection_in.channel()
 	channel_in.exchange_declare(exchange='people_found', exchange_type='direct')
