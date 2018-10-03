@@ -72,13 +72,19 @@ def clustering(poses):
 # Sends locations of clusters found to Rabbit
 def publish_to_mq(datas):
 	entries = ""
-	for data in datas:
-		entry = str((str(data[0]),str(data[1])))
-		entries = entry + ">" + entries
-		# Publish message to outgoing exchange
 	channel.basic_publish(exchange='clusters_found',
 							routing_key='key_clusters_found',
-							body=entries) 
+							body="START") 
+	for data in datas:
+		entry = str((str(data[0]),str(data[1])))
+		#entries = entry + ">" + entries
+		# Publish message to outgoing exchange
+		channel.basic_publish(exchange='clusters_found',
+							routing_key='key_clusters_found',
+							body=entry) 
+	channel.basic_publish(exchange='clusters_found',
+							routing_key='key_clusters_found',
+							body="END")
 	# Indicate delivery of message
 	#print(" [ >> ] Sent %r" % entries)
 

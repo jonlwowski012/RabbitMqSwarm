@@ -27,15 +27,19 @@ poses = []
 
 # Sends locations of metaclusters found to Rabbit
 def publish_to_mq(datas):
+	channel.basic_publish(exchange='metaclusters_found',
+							routing_key='key_metaclusters_found',
+							body="START") 
 	entries = ""
 	for data in datas:
 		entry = str((str(data[0]),str(data[1])))
-		entries = entry + ">" + entries
-	#print(entries)
-	# Publish message to outgoing exchange
+		# Publish message to outgoing exchange
+		channel.basic_publish(exchange='metaclusters_found',
+							routing_key='key_metaclusters_found',
+							body=entry) 
 	channel.basic_publish(exchange='metaclusters_found',
 							routing_key='key_metaclusters_found',
-							body=entries) 
+							body="END") 
 	# Indicate delivery of message
 	#print(" [ >> ] Sent %r" % entry)
 
@@ -63,20 +67,18 @@ def cmeans_clustering(data):
 # Receive messages from Clustering and publish to Metaclustering
 def callback(ch, method, properties, body):
 	global poses
-	poses_list = []
-	poses_temp = body.decode("utf-8")
-	for pose in poses_temp.split("\n")[0].split(">"):
-		if len(pose.replace("(","").replace(")","").replace("'","").split(",")) == 2:
-			x = pose.replace("(","").replace(")","").replace("'","").split(",")[0]
-			y = pose.replace("(","").replace(")","").replace("'","").split(",")[1]
-			#print(" [x] Received ", x, " " , y)
-			if [float(x),float(y)] not in poses:
-				poses_list.append([float(x),float(y)])
-	poses = poses_list
-	print("Metaclustering clusters of len: ", len(poses))
-	centroids,labels,location_array = cmeans_clustering(poses)
-	#print(centroids)
-	publish_to_mq(centroids)
+	if 'START' in str(body):
+		poses = []
+	elif 'END' in str(body):
+		print("Metaclustering clusters of len: ", len(poses))
+		centroids,labels,location_array = cmeans_clustering(poses)
+		#print(centroids)
+		publish_to_mq(centroids)
+	else:
+		poses_temp = body.decode("utf-8")
+		x = float(poses_temp.replace("(","").replace(")","").replace("'","").split(",")[0])
+		y = float(poses_temp.replace("(","").replace(")","").replace("'","").split(",")[1])
+		poses.append([x,y])
 
 if __name__ == '__main__':
 	# Establish outgoing connection to Clustering

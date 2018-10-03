@@ -25,6 +25,7 @@ credentials = pika.PlainCredentials(username, password)
 
 boat_info = []
 exchanges_made = []
+poses_list = []
 
 class BoatInfoThread(threading.Thread):
 	def __init__(self, host, topic, *args, **kwargs):
@@ -71,19 +72,20 @@ class TSPThread(threading.Thread):
 		
 	# Receive messages from Metaclustering and publish to Auctioning
 	def callback_clustering(self, ch, method, properties, body):
-		poses_list = []
-		poses_temp = body.decode("utf-8")
-		for pose in poses_temp.split("\n")[0].split(">"):
-			if len(pose.replace("(","").replace(")","").replace("'","").split(",")) == 2:
-				x = pose.replace("(","").replace(")","").replace("'","").split(",")[0]
-				y = pose.replace("(","").replace(")","").replace("'","").split(",")[1]
-				#print(" [x] Received ", x, " " , y)
-				if [float(x),float(y)] not in poses_list:
-					poses_list.append([float(x),float(y)])
-		if len(poses_list) > 2:
+		global poses_list
+		global boat_info
+		if 'START' in str(body):
+			poses_list=[]
+		elif 'END' in str(body):
 			print("Len: ", len(poses_list), " Id: ", self.boat_id)
 			path = tsp_solver(poses_list)
 			self.publish_to_mq(path)
+		else:
+			poses_temp = body.decode("utf-8")
+			x = float(poses_temp.replace("(","").replace(")","").replace("'","").split(",")[0])
+			y = float(poses_temp.replace("(","").replace(")","").replace("'","").split(",")[1])
+			poses_list.append([x,y])
+
 			
 	# Sends locations of clusters found to Rabbit
 	def publish_to_mq(self,datas):

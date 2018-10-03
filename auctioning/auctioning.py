@@ -16,7 +16,6 @@ import time
 import pika
 import threading
 import copy
-import matplotlib.pyplot as plt
 
 hostname = '129.114.111.193'
 username = "yellow"
@@ -38,17 +37,15 @@ class AuctionThread(threading.Thread):
 	# Receive messages from Metaclustering and publish to Auctioning
 	def callback_clustering(self, ch, method, properties, body):
 		global poses
-		poses_list = []
-		poses_temp = body.decode("utf-8")
-		for pose in poses_temp.split("\n")[0].split(">"):
-			if len(pose.replace("(","").replace(")","").replace("'","").split(",")) == 2:
-				x = pose.replace("(","").replace(")","").replace("'","").split(",")[0]
-				y = pose.replace("(","").replace(")","").replace("'","").split(",")[1]
-				#print(" [x] Received ", x, " " , y)
-				#if [float(x),float(y)] not in poses:
-				poses_list.append([float(x),float(y)])
-		poses = copy.deepcopy(poses_list)
-				#publish_to_mq(centroids)
+		if 'START' in str(body):
+			poses = []
+		elif 'END' in str(body):
+			pass
+		else:
+			poses_temp = body.decode("utf-8")
+			x = float(poses_temp.replace("(","").replace(")","").replace("'","").split(",")[0])
+			y = float(poses_temp.replace("(","").replace(")","").replace("'","").split(",")[1])
+			poses.append([x,y])
 			
 	def run(self):
 		global credentials
@@ -77,16 +74,15 @@ class ClustersThread(threading.Thread):
 	# Receive messages from Metaclustering and publish to Auctioning
 	def callback_clustering(self, ch, method, properties, body):
 		global clusters
-		poses_list = []
-		poses_temp = body.decode("utf-8")
-		for pose in poses_temp.split("\n")[0].split(">"):
-			if len(pose.replace("(","").replace(")","").replace("'","").split(",")) == 2:
-				x = pose.replace("(","").replace(")","").replace("'","").split(",")[0]
-				y = pose.replace("(","").replace(")","").replace("'","").split(",")[1]
-				#print(" [x] Received ", x, " " , y)
-				#if [float(x),float(y)] not in poses:
-				poses_list.append([float(x),float(y)])
-		clusters = copy.deepcopy(poses_list)
+		if 'START' in str(body):
+			clusters = []
+		elif 'END' in str(body):
+			pass
+		else:
+			poses_temp = body.decode("utf-8")
+			x = float(poses_temp.replace("(","").replace(")","").replace("'","").split(",")[0])
+			y = float(poses_temp.replace("(","").replace(")","").replace("'","").split(",")[1])
+			clusters.append([x,y])
 		
 	def run(self):
 		connection = pika.BlockingConnection(pika.ConnectionParameters(host=self.host, credentials=credentials))
@@ -201,14 +197,19 @@ def publish_to_mq(boat_id, datas):
 	channel = connection.channel()
 	channel.exchange_declare(exchange='auctioning'+"_"+str(boat_id), exchange_type='direct')
 	entries = ""
+	channel.basic_publish(exchange='auctioning'+"_"+str(boat_id),
+							routing_key='key_' + 'auctioning' +"_"+str(boat_id),
+							body="START") 
 	for data in datas:
 		entry = str((str(data[0]),str(data[1])))
-		entries = entry + ">" + entries
+		channel.basic_publish(exchange='auctioning'+"_"+str(boat_id),
+							routing_key='key_' + 'auctioning' +"_"+str(boat_id),
+							body=entry) 
 	#print(entries)
 	# Publish message to outgoing exchange
 	channel.basic_publish(exchange='auctioning'+"_"+str(boat_id),
 							routing_key='key_' + 'auctioning' +"_"+str(boat_id),
-							body=entries) 
+							body="END") 
 	# Indicate delivery of message
 	#print(" [ >> ] Sent %r" % entry)
 

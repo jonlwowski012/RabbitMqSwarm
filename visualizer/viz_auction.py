@@ -40,16 +40,15 @@ class ClustersThread(threading.Thread):
 	# Receive messages from Metaclustering and publish to Auctioning
 	def callback_clustering(self, ch, method, properties, body):
 		global clusters
-		poses_list = []
-		poses_temp = body.decode("utf-8")
-		for pose in poses_temp.split("\n")[0].split(">"):
-			if len(pose.replace("(","").replace(")","").replace("'","").split(",")) == 2:
-				x = pose.replace("(","").replace(")","").replace("'","").split(",")[0]
-				y = pose.replace("(","").replace(")","").replace("'","").split(",")[1]
-				#print(" [x] Received ", x, " " , y)
-				if [float(x),float(y)] not in clusters[self.boat_id-1]:
-					poses_list.append([float(x),float(y)])
-		clusters[self.boat_id-1] = poses_list
+		if 'START' in str(body):
+			clusters[self.boat_id-1] = []
+		elif 'END' in str(body):
+			pass
+		else:
+			poses_temp = body.decode("utf-8")
+			x = float(poses_temp.replace("(","").replace(")","").replace("'","").split(",")[0])
+			y = float(poses_temp.replace("(","").replace(")","").replace("'","").split(",")[1])
+			clusters[self.boat_id-1].append([x,y])
 		
 	def run(self):
 		connection = pika.BlockingConnection(pika.ConnectionParameters(host=self.host, credentials=credentials))
@@ -86,6 +85,7 @@ if __name__ == '__main__':
 			for i,pose in enumerate(boat):
 				x = pose[0]
 				y = pose[1]
+				print(x,y)
 				plt.scatter(float(x),float(y),c=colors[j%len(colors)],s=5)
 				circle1=plt.Circle((float(x),float(y)),color=colors[j%len(colors)], radius=10,fill=False)
 				fig = plt.gcf()

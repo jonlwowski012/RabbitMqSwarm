@@ -83,31 +83,33 @@ class ClustersThread(threading.Thread):
 	# Receive messages from Metaclustering and publish to Auctioning
 	def callback_clustering(self, ch, method, properties, body):
 		global clusters
-		poses_list = []
-		poses_list.append([boat_info[self.boat_id-1][2],boat_info[self.boat_id-1][3]])
-		poses_temp = body.decode("utf-8")
-		for pose in poses_temp.split("\n")[0].split(">"):
-			if len(pose.replace("(","").replace(")","").replace("'","").split(",")) == 2:
-				x = pose.replace("(","").replace(")","").replace("'","").split(",")[0]
-				y = pose.replace("(","").replace(")","").replace("'","").split(",")[1]
-				#print(" [x] Received ", x, " " , y)
-				if [float(x),float(y)] not in clusters[self.boat_id-1]:
-					poses_list.append([float(x),float(y)])
-		clusters[self.boat_id-1] = poses_list
-		print(clusters[self.boat_id-1])
-		self.publish_to_mq(poses_list)
+		if 'START' in str(body):
+			clusters[self.boat_id-1] = []
+			clusters[self.boat_id-1].append([boat_info[self.boat_id-1][2],boat_info[self.boat_id-1][3]])
+		elif 'END' in str(body):
+			self.publish_to_mq(clusters[self.boat_id-1])
+		else:
+			poses_temp = body.decode("utf-8")
+			x = float(poses_temp.replace("(","").replace(")","").replace("'","").split(",")[0])
+			y = float(poses_temp.replace("(","").replace(")","").replace("'","").split(",")[1])
+			clusters[self.boat_id-1].append([x,y])
 		
 	# Sends locations of people found to Rabbit
 	def publish_to_mq(self,datas):
+		channel.basic_publish(exchange='tsp_info'+'_'+str(self.boat_id),
+								routing_key='key_'+'tsp_info'+'_'+str(self.boat_id),
+								body="START")
 		entries = ""
 		for data in datas:
 			entry = str((str(data[0]),str(data[1])))
-			entries = entry + ">" + entries
+			channel.basic_publish(exchange='tsp_info'+'_'+str(self.boat_id),
+								routing_key='key_'+'tsp_info'+'_'+str(self.boat_id),
+								body=entry)
 		#print( 'tsp_info'+'_'+str(self.boat_id) )
 		# Publish message to outgoing exchange
 		channel.basic_publish(exchange='tsp_info'+'_'+str(self.boat_id),
 								routing_key='key_'+'tsp_info'+'_'+str(self.boat_id),
-								body=entries) 
+								body="END") 
 		# Indicate delivery of message
 		#print("Boat ID: ", self.boat_id, " Data: ", entry)
 		

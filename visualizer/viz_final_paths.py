@@ -93,7 +93,7 @@ if __name__ == '__main__':
 			if boat is not None:
 				print("len boat ", i, " ", len(boat))
 				for j,pose in enumerate(boat):
-					if j == 0:
+					if j == len(boat)-2:
 						plt.scatter(pose[0],pose[1], c=colors[i], marker="*", s=50)
 					else:
 						plt.scatter(pose[0],pose[1], c=colors[i])
