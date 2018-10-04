@@ -28,98 +28,104 @@ exchanges_made = []
 poses_list = []
 
 class BoatInfoThread(threading.Thread):
-	def __init__(self, host, topic, *args, **kwargs):
-		super(BoatInfoThread, self).__init__(*args, **kwargs)
-		self.host = host
-		self.topic = topic
-				
-	# Receive messages from Metaclustering and publish to Auctioning
-	def callback_boatinfo(self, ch, method, properties, body):
-		global boat_info
-		boat_info_temp = body.decode("utf-8")
-		for boat in boat_info_temp.split("\n"):
-			boat_id = boat.replace("(","").replace(")","").replace("'","").split(",")[4]
-			if int(boat_id) not in boat_info:
-				boat_info.append(int(boat_id))
-			
-	def run(self):
-		connection = pika.BlockingConnection(pika.ConnectionParameters(host=self.host, credentials=credentials))
-		channel = connection.channel()
-		channel.exchange_declare(exchange=self.topic, exchange_type='direct')
-		result = channel.queue_declare(exclusive=True)
-		queue = result.method.queue
-		channel.queue_bind(exchange=self.topic,queue=queue,routing_key="key_"+self.topic)
-		
-		#Indicate queue readiness
-		print(' [*] Waiting for messages. To exit, press CTRL+C')
+    def __init__(self, host, topic, *args, **kwargs):
+        super(BoatInfoThread, self).__init__(*args, **kwargs)
+        self.host = host
+        self.topic = topic
+                
+    # Receive messages from Metaclustering and publish to Auctioning
+    def callback_boatinfo(self, ch, method, properties, body):
+        global boat_info
+        boat_info_temp = body.decode("utf-8")
+        for boat in boat_info_temp.split("\n"):
+            boat_id = boat.replace("(","").replace(")","").replace("'","").split(",")[4]
+            if int(boat_id) not in boat_info:
+                boat_info.append(int(boat_id))
+            
+    def run(self):
+        connection = pika.BlockingConnection(pika.ConnectionParameters(host=self.host, credentials=credentials))
+        channel = connection.channel()
+        channel.exchange_declare(exchange=self.topic, exchange_type='direct')
+        result = channel.queue_declare(exclusive=True)
+        queue = result.method.queue
+        channel.queue_bind(exchange=self.topic,queue=queue,routing_key="key_"+self.topic)
+        
+        #Indicate queue readiness
+        print(' [*] Waiting for messages. To exit, press CTRL+C')
 
-		channel.basic_consume(self.callback_boatinfo,
-							  queue=queue,
-							  no_ack=False)
+        channel.basic_consume(self.callback_boatinfo,
+                              queue=queue,
+                              no_ack=False)
 
-		channel.start_consuming()  
+        channel.start_consuming()  
 
 
 class TSPThread(threading.Thread):
-	def __init__(self, host, topic, boat_id, *args, **kwargs):
-		super(TSPThread, self).__init__(*args, **kwargs)
-		self.host = host
-		self.topic = topic
-		self.boat_id = boat_id
-		self.connection = pika.BlockingConnection(pika.ConnectionParameters(host=self.host, credentials=credentials))
-		self.channel = self.connection.channel()
-		self.channel.exchange_declare(exchange='final_path'+'_'+str(self.boat_id), exchange_type='direct')
-		
-	# Receive messages from Metaclustering and publish to Auctioning
-	def callback_clustering(self, ch, method, properties, body):
-		global poses_list
-		global boat_info
-		if 'START' in str(body):
-			poses_list=[]
-		elif 'END' in str(body):
-			print("Len: ", len(poses_list), " Id: ", self.boat_id)
-			path = tsp_solver(poses_list)
-			self.publish_to_mq(path)
-		else:
-			poses_temp = body.decode("utf-8")
-			x = float(poses_temp.replace("(","").replace(")","").replace("'","").split(",")[0])
-			y = float(poses_temp.replace("(","").replace(")","").replace("'","").split(",")[1])
-			poses_list.append([x,y])
+    def __init__(self, host, topic, boat_id, *args, **kwargs):
+        super(TSPThread, self).__init__(*args, **kwargs)
+        self.host = host
+        self.topic = topic
+        self.boat_id = boat_id
+        self.connection = pika.BlockingConnection(pika.ConnectionParameters(host=self.host, credentials=credentials))
+        self.channel = self.connection.channel()
+        self.channel.exchange_declare(exchange='final_path'+'_'+str(self.boat_id), exchange_type='direct')
+        
+    # Receive messages from Metaclustering and publish to Auctioning
+    def callback_clustering(self, ch, method, properties, body):
+        global poses_list
+        global boat_info
+        if 'START' in str(body):
+            poses_list=[]
+        elif 'END' in str(body):
+            print("Len: ", len(poses_list), " Id: ", self.boat_id)
+            path = tsp_solver(poses_list)
+            self.publish_to_mq(path)
+        else:
+            poses_temp = body.decode("utf-8")
+            x = float(poses_temp.replace("(","").replace(")","").replace("'","").split(",")[0])
+            y = float(poses_temp.replace("(","").replace(")","").replace("'","").split(",")[1])
+            poses_list.append([x,y])
 
-			
-	# Sends locations of clusters found to Rabbit
-	def publish_to_mq(self,datas):
-		entries = ""
-		for data in datas:
-			entry = str((str(data[0]),str(data[1])))
-			entries = entry + ">" + entries
-			# Publish message to outgoing exchange
-		self.channel.basic_publish(exchange='final_path'+'_'+str(self.boat_id),
-								routing_key='key_final_path'+'_'+str(self.boat_id),
-								body=entries) 
-		#print('final_path'+'_'+str(self.boat_id))
-		# Indicate delivery of message
-		#print(" [ >> ] Sent %r" % entries)	
-		
-	def run(self):
-		#print(self.topic+"_"+str(self.boat_id))
-		connection = pika.BlockingConnection(pika.ConnectionParameters(host=self.host, credentials=credentials))
-		channel = connection.channel()
-		channel.exchange_declare(exchange=self.topic+"_"+str(self.boat_id), exchange_type='direct')
-		result = channel.queue_declare(exclusive=True)
-		queue = result.method.queue
-		channel.queue_bind(exchange=self.topic+"_"+str(self.boat_id),queue=queue,routing_key="key_"+self.topic+"_"+str(self.boat_id))
-		
-		#Indicate queue readiness
-		print(' [*] Waiting for messages. To exit, press CTRL+C')
+            
+    # Sends locations of clusters found to Rabbit
+    def publish_to_mq(self,datas):
+        entries = ""
+        self.channel.basic_publish(exchange='final_path'+'_'+str(self.boat_id),
+                                routing_key='key_final_path'+'_'+str(self.boat_id),
+                                body="START")
+        for data in datas:
+            entry = str((str(data[0]),str(data[1])))
+            self.channel.basic_publish(exchange='final_path'+'_'+str(self.boat_id),
+                                routing_key='key_final_path'+'_'+str(self.boat_id),
+                                body=entry)
+            #entries = entry + ">" + entries
+            # Publish message to outgoing exchange
+        self.channel.basic_publish(exchange='final_path'+'_'+str(self.boat_id),
+                                routing_key='key_final_path'+'_'+str(self.boat_id),
+                                body="END") 
+        #print('final_path'+'_'+str(self.boat_id))
+        # Indicate delivery of message
+        #print(" [ >> ] Sent %r" % entries) 
+        
+    def run(self):
+        #print(self.topic+"_"+str(self.boat_id))
+        connection = pika.BlockingConnection(pika.ConnectionParameters(host=self.host, credentials=credentials))
+        channel = connection.channel()
+        channel.exchange_declare(exchange=self.topic+"_"+str(self.boat_id), exchange_type='direct')
+        result = channel.queue_declare(exclusive=True)
+        queue = result.method.queue
+        channel.queue_bind(exchange=self.topic+"_"+str(self.boat_id),queue=queue,routing_key="key_"+self.topic+"_"+str(self.boat_id))
+        
+        #Indicate queue readiness
+        print(' [*] Waiting for messages. To exit, press CTRL+C')
 
-		channel.basic_consume(self.callback_clustering,
-							  queue=queue,
-							  no_ack=False)
+        channel.basic_consume(self.callback_clustering,
+                              queue=queue,
+                              no_ack=False)
 
-		channel.start_consuming()    
-		
-				
+        channel.start_consuming()    
+        
+                
 ### Dijkstra Class 
 class Graph(object):
     def __init__(self):
@@ -153,12 +159,14 @@ def setup_tsp(clusters):
                 number = number + 1
         for node in graph_people_locations.nodes:
                 for node2 in graph_people_locations.nodes:
-                        if(node != '0' and node2 != '0'):
+                        if(node != '1' and node2 != '1'):
                                 cost = distance((people_location_array_current[int(node)-1][0], people_location_array_current[int(node)-1][1]),
-												(people_location_array_current[int(node2)-1][0],
-												people_location_array_current[int(node2)-1][1]))
-                        else:
-                                cost = 9999999
+                                                (people_location_array_current[int(node2)-1][0],
+                                                people_location_array_current[int(node2)-1][1]))
+                        elif node == '1':
+                                cost = 0
+                        elif node2 == '1':
+                                cost = 99999999
                         graph_people_locations.add_edge(node,node2,cost)
                         cost_mat[int(node)][int(node2)]=cost
         return cost_mat
@@ -166,26 +174,26 @@ def setup_tsp(clusters):
 
 ### TSP Solver
 def tsp_solver(clusters):
-	cost_mat = setup_tsp(clusters)
-	path = solve_tsp( cost_mat )
-	path_array = [] 
-	for index in path:
-		path_array.append(clusters[index-1])
-	#print(path_array)
-	return path_array
+    cost_mat = setup_tsp(clusters)
+    path = solve_tsp( cost_mat )
+    path_array = [] 
+    for index in path:
+        path_array.append(clusters[index-1])
+    #print(path_array)
+    return path_array
 
 
 if __name__ == '__main__':
-	# Establish incoming connection from UAVs
-	boat_thread = BoatInfoThread(hostname, 'boat_info')
-	boat_thread.start()
-	
-	threads = []
-	while(1):
-		for boat in boat_info:
-			if boat not in exchanges_made:
-				exchanges_made.append(boat)
-				threads.append(TSPThread(hostname, 'tsp_info', int(boat)))
-				threads[-1].start()
-				
+    # Establish incoming connection from UAVs
+    boat_thread = BoatInfoThread(hostname, 'boat_info')
+    boat_thread.start()
+    
+    threads = []
+    while(1):
+        for boat in boat_info:
+            if boat not in exchanges_made:
+                exchanges_made.append(boat)
+                threads.append(TSPThread(hostname, 'tsp_info', int(boat)))
+                threads[-1].start()
+                
 

@@ -25,6 +25,7 @@ credentials = pika.PlainCredentials(username, password)
 num_boats = 5
 poses = []
 clusters = []
+clusters_temp = []
 clusters_threads = []
 
 class ClustersThread(threading.Thread):
@@ -39,16 +40,16 @@ class ClustersThread(threading.Thread):
 		
 	# Receive messages from Metaclustering and publish to Auctioning
 	def callback_clustering(self, ch, method, properties, body):
-		global clusters
+		global clusters, clusters_temp
 		if 'START' in str(body):
-			clusters[self.boat_id-1] = []
+			clusters_temp[self.boat_id-1] = []
 		elif 'END' in str(body):
-			pass
+			clusters[self.boat_id-1] = clusters_temp[self.boat_id-1]
 		else:
 			poses_temp = body.decode("utf-8")
 			x = float(poses_temp.replace("(","").replace(")","").replace("'","").split(",")[0])
 			y = float(poses_temp.replace("(","").replace(")","").replace("'","").split(",")[1])
-			clusters[self.boat_id-1].append([x,y])
+			clusters_temp[self.boat_id-1].append([x,y])
 		
 	def run(self):
 		connection = pika.BlockingConnection(pika.ConnectionParameters(host=self.host, credentials=credentials))
@@ -73,6 +74,7 @@ def viz():
 	# Establish incoming connection from UAVs
 	for i in range(num_boats):
 		clusters.append([])
+		clusters_temp.append([])
 		clusters_threads.append(ClustersThread(hostname, 'auctioning'+"_"+str(i+1), i+1))
 		clusters_threads[len(clusters_threads)-1].start()
 	
@@ -82,10 +84,10 @@ if __name__ == '__main__':
 	viz()
 	while(1):
 		for j,boat in enumerate(clusters):
+			print(j , len(boat))
 			for i,pose in enumerate(boat):
 				x = pose[0]
 				y = pose[1]
-				print(x,y)
 				plt.scatter(float(x),float(y),c=colors[j%len(colors)],s=5)
 				circle1=plt.Circle((float(x),float(y)),color=colors[j%len(colors)], radius=10,fill=False)
 				fig = plt.gcf()

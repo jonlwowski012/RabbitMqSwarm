@@ -34,17 +34,15 @@ class AuctionThread(threading.Thread):
 	# Receive messages from Metaclustering and publish to Auctioning
 	def callback_clustering(self, ch, method, properties, body):
 		global poses
-		poses_list = []
-		poses_temp = body.decode("utf-8")
-		for pose in poses_temp.split("\n")[0].split(">"):
-			if len(pose.replace("(","").replace(")","").replace("'","").split(",")) == 2:
-				x = pose.replace("(","").replace(")","").replace("'","").split(",")[0]
-				y = pose.replace("(","").replace(")","").replace("'","").split(",")[1]
-				#print(" [x] Received ", x, " " , y)
-				if [float(x),float(y)] not in poses:
-					poses_list.append([float(x),float(y)])
-		poses = poses_list
-				#publish_to_mq(centroids)
+		if 'START' in str(body):
+			poses = []
+		elif 'END' in str(body):
+			pass
+		else:
+			poses_temp = body.decode("utf-8")
+			x = float(poses_temp.replace("(","").replace(")","").replace("'","").split(",")[0])
+			y = float(poses_temp.replace("(","").replace(")","").replace("'","").split(",")[1])
+			poses.append([x,y])
 			
 	def run(self):
 		global credentials

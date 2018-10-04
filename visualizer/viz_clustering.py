@@ -23,29 +23,27 @@ password = "test5243"
 credentials = pika.PlainCredentials(username, password)
 poses = []
 colors = ['b','g','y','k','c','r']
+i = 0
+
 # Receive messages from UAVs and publish to Clustering
 def callback(ch, method, properties, body):
-	global poses
-	i = 0
-	poses_list = []
-	poses_temp = body.decode("utf-8")
-	for pose in poses_temp.split("\n")[0].split(">"):
-		i+=1
-		if len(pose.replace("(","").replace(")","").replace("'","").split(",")) == 2:
-			x = pose.replace("(","").replace(")","").replace("'","").split(",")[0]
-			y = pose.replace("(","").replace(")","").replace("'","").split(",")[1]
-			#print(" [x] Received ", x, " " , y)
-			if [float(x),float(y)] not in poses:
-				plt.scatter(float(x),float(y),c=colors[i%len(colors)],s=5)
-				circle1=plt.Circle((float(x),float(y)),color=colors[i%len(colors)], radius=20,fill=False)
-				fig = plt.gcf()
-				ax = fig.gca()
-				ax.add_artist(circle1)
-				plt.draw()
-				plt.pause(0.01)
-	plt.gcf().clear()
-	#print("Len Poses: ", len(poses))
-
+	global poses, i
+	if 'START' in str(body):
+		poses = []
+	elif 'END' in str(body):
+		plt.gcf().clear()
+	else:
+		poses_temp = body.decode("utf-8")
+		x = float(poses_temp.replace("(","").replace(")","").replace("'","").split(",")[0])
+		y = float(poses_temp.replace("(","").replace(")","").replace("'","").split(",")[1])
+		plt.scatter(float(x),float(y),c=colors[i%len(colors)],s=5)
+		circle1=plt.Circle((float(x),float(y)),color=colors[i%len(colors)], radius=20,fill=False)
+		fig = plt.gcf()
+		ax = fig.gca()
+		ax.add_artist(circle1)
+		plt.draw()
+		plt.pause(0.01)
+		i += 1
 
 if __name__ == '__main__':
 	# Establish incoming connection from UAVs
