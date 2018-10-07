@@ -26,16 +26,19 @@ poses = []
 # Receive messages from UAVs and publish to Clustering
 def callback(ch, method, properties, body):
 	global poses
-	body_temp = str(body).replace("(","").replace(")","").replace("b","")
-	body_temp = body_temp.replace("'","")
-	x = float(body_temp.split(',')[0])
-	y = float(body_temp.split(',')[1])
-	#print(" [x] Received ", x, " " , y)
-	if [x,y] not in poses:
-		poses.append([x,y])
-		plt.scatter(x,y,c='b',s=30)
+	if "START" in str(body):
+		poses = []
+	elif "END" in str(body):
+		for pose in poses:
+			plt.scatter(pose[0],pose[1],c='b',s=30)
 		plt.draw()
-		plt.pause(0.01)
+		plt.pause(0.001)
+	else:
+		body_temp = str(body).replace("(","").replace(")","").replace("b","")
+		body_temp = body_temp.replace("'","")
+		x = float(body_temp.split(',')[0])
+		y = float(body_temp.split(',')[1])
+		poses.append([x,y])
 	#print("Len Poses: ", len(poses))
 
 

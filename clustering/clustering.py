@@ -92,19 +92,22 @@ def publish_to_mq(datas):
 # Receive messages from UAVs and publish to Clustering
 def callback(ch, method, properties, body):
 	global poses, prev_poses_len
-	body_temp = str(body).replace("(","").replace(")","").replace("b","")
-	body_temp = body_temp.replace("'","")
-	x = float(body_temp.split(',')[0])
-	y = float(body_temp.split(',')[1])
-	#print(" [x] Received ", x, " " , y)
-	if [x,y] not in poses:
-		poses.append([x,y])
-	#print("Len Poses: ", len(poses))
-	if len(poses) % 50 == 0 or len(poses) == prev_poses_len:
+	if "START" in str(body):
+		poses = []
+	elif "END" in str(body):
+		#print("Len Poses: ", len(poses))
 		print("Clustering with len: ", len(poses))
 		centroids = clustering(poses)
 		publish_to_mq(centroids)
 		prev_poses_len = len(poses)
+	else:
+		body_temp = str(body).replace("(","").replace(")","").replace("b","")
+		body_temp = body_temp.replace("'","")
+		x = float(body_temp.split(',')[0])
+		y = float(body_temp.split(',')[1])
+		#print(" [x] Received ", x, " " , y)
+		if [x,y] not in poses:
+			poses.append([x,y])
 
 
 if __name__ == '__main__':
