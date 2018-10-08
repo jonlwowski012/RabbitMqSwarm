@@ -52,7 +52,8 @@ class FinalPathsThread(threading.Thread):
 		if self.end_time == 0.0:
 			self.end_time = time.time()
 		if len(poses_list) > 0:
-			print("Time to get paths: ", self.end_time-self.start_time, " Boat ID: ", self.boat_id, "Final Path: ", len(poses_list))
+			pass
+			#print("Time to get paths: ", self.end_time-self.start_time, " Boat ID: ", self.boat_id, "Final Path: ", len(poses_list))
 		
 	def run(self):
 		connection = pika.BlockingConnection(pika.ConnectionParameters(host=self.host, credentials=credentials))
@@ -96,40 +97,40 @@ class ClustersThread(threading.Thread):
 		
 	# Sends locations of people found to Rabbit
 	def publish_to_mq(self,datas):
-		channel.basic_publish(exchange='tsp_info'+'_'+str(self.boat_id),
+		self.channel.basic_publish(exchange='tsp_info'+'_'+str(self.boat_id),
 								routing_key='key_'+'tsp_info'+'_'+str(self.boat_id),
 								body="START")
 		entries = ""
 		for data in datas:
 			entry = str((str(data[0]),str(data[1])))
-			channel.basic_publish(exchange='tsp_info'+'_'+str(self.boat_id),
+			self.channel.basic_publish(exchange='tsp_info'+'_'+str(self.boat_id),
 								routing_key='key_'+'tsp_info'+'_'+str(self.boat_id),
 								body=entry)
-			print(entry)
+			#print(entry)
 		#print( 'tsp_info'+'_'+str(self.boat_id) )
 		# Publish message to outgoing exchange
-		channel.basic_publish(exchange='tsp_info'+'_'+str(self.boat_id),
+		self.channel.basic_publish(exchange='tsp_info'+'_'+str(self.boat_id),
 								routing_key='key_'+'tsp_info'+'_'+str(self.boat_id),
 								body="END") 
 		# Indicate delivery of message
 		#print("Boat ID: ", self.boat_id, " Data: ", entry)
 		
 	def run(self):
-		connection = pika.BlockingConnection(pika.ConnectionParameters(host=self.host, credentials=credentials))
-		channel = connection.channel()
-		channel.exchange_declare(exchange=self.topic, exchange_type='direct')
-		result = channel.queue_declare(exclusive=True)
-		queue = result.method.queue
-		channel.queue_bind(exchange=self.topic,queue=queue,routing_key="key_"+self.topic)
+		self.connection = pika.BlockingConnection(pika.ConnectionParameters(host=self.host, credentials=credentials))
+		self.channel = self.connection.channel()
+		self.channel.exchange_declare(exchange=self.topic, exchange_type='direct')
+		self.result = self.channel.queue_declare(exclusive=True)
+		self.queue = self.result.method.queue
+		self.channel.queue_bind(exchange=self.topic,queue=self.queue,routing_key="key_"+self.topic)
 		
 		#Indicate queue readiness
 		print(' [*] Waiting for messages. To exit, press CTRL+C')
 
-		channel.basic_consume(self.callback_clustering,
-							  queue=queue,
+		self.channel.basic_consume(self.callback_clustering,
+							  queue=self.queue,
 							  no_ack=False)
 
-		channel.start_consuming()  
+		self.channel.start_consuming()  
 		
 # Sends locations of people found to Rabbit
 def publish_to_mq(data):
@@ -172,6 +173,7 @@ def gen_poses():
 		final_paths_threads[len(final_paths_threads)-1].start()
 		boat_id += 1
 	while(1):
+		print(boat_info)
 		publish_to_mq(boat_info)
 		time.sleep(1)
 
