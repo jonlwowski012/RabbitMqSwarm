@@ -35,12 +35,21 @@ class BoatInfoThread(threading.Thread):
                 
     # Receive messages from Metaclustering and publish to Auctioning
     def callback_boatinfo(self, ch, method, properties, body):
-        global boat_info
-        boat_info_temp = body.decode("utf-8")
-        for boat in boat_info_temp.split("\n"):
-            boat_id = boat.replace("(","").replace(")","").replace("'","").split(",")[4]
-            if int(boat_id) not in boat_info:
-                boat_info.append(int(boat_id))
+	global boat_info
+	if "START" in str(body):
+		boat_info = []
+	elif "END" in str(body):
+		pass
+	else:
+		boat_info_temp = body.decode("utf-8")
+		for boat in boat_info_temp.split("\n"):
+			speed = boat.replace("(","").replace(")","").replace("'","").split(",")[0]
+			capacity = boat.replace("(","").replace(")","").replace("'","").split(",")[1]
+			x = boat.replace("(","").replace(")","").replace("'","").split(",")[2]
+			y = boat.replace("(","").replace(")","").replace("'","").split(",")[3]
+			boat_id = boat.replace("(","").replace(")","").replace("'","").split(",")[4]
+			if boat_info == [] or boat_id not in np.array(boat_info)[:,4]:
+				boat_info.append(int(boat_id))
             
     def run(self):
         connection = pika.BlockingConnection(pika.ConnectionParameters(host=self.host, credentials=credentials))
