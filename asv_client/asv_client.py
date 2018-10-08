@@ -133,12 +133,19 @@ class ClustersThread(threading.Thread):
 		
 # Sends locations of people found to Rabbit
 def publish_to_mq(data):
-	entry = str(data)
-	#print( entry )
-	# Publish message to outgoing exchange
 	channel.basic_publish(exchange='boat_info',
-		                    routing_key='key_boat_info',
-		                    body=entry) 
+				            routing_key='key_boat_info',
+				            body="START")
+	for boat in data:
+		entry = str(boat)
+		#print( entry )
+		# Publish message to outgoing exchange
+		channel.basic_publish(exchange='boat_info',
+				            routing_key='key_boat_info',
+				            body=entry) 
+	channel.basic_publish(exchange='boat_info',
+				            routing_key='key_boat_info',
+				            body="END")
 	# Indicate delivery of message
 	#print(" [ >> ] Sent %r" % entry)
 
@@ -154,7 +161,7 @@ def gen_poses():
 		boat_location_y = random.uniform(-200,200)
 		num_people -= 1
 		boat_info.append((boat_speed,boat_capacity,boat_location_x,boat_location_y, boat_id))
-		publish_to_mq((boat_speed,boat_capacity,boat_location_x,boat_location_y, boat_id))
+		#publish_to_mq((boat_speed,boat_capacity,boat_location_x,boat_location_y, boat_id))
 		
 		
 		# Establish incoming connection from UAVs
@@ -164,6 +171,9 @@ def gen_poses():
 		final_paths_threads.append(FinalPathsThread(hostname, 'final_path'+"_"+str(boat_id), boat_id))
 		final_paths_threads[len(final_paths_threads)-1].start()
 		boat_id += 1
+	while(1):
+		publish_to_mq(boat_info)
+		time.sleep(1)
 
 ### Main Service Client for ASV
 def asv_service():
