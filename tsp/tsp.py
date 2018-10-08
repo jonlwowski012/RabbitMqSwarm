@@ -28,45 +28,45 @@ exchanges_made = []
 poses_list = []
 
 class BoatInfoThread(threading.Thread):
-    def __init__(self, host, topic, *args, **kwargs):
-        super(BoatInfoThread, self).__init__(*args, **kwargs)
-        self.host = host
-        self.topic = topic
-                
-    # Receive messages from Metaclustering and publish to Auctioning
-    def callback_boatinfo(self, ch, method, properties, body):
-	global boat_info
-	if "START" in str(body):
-		boat_info = []
-	elif "END" in str(body):
-		pass
-	else:
-		boat_info_temp = body.decode("utf-8")
-		for boat in boat_info_temp.split("\n"):
-			speed = boat.replace("(","").replace(")","").replace("'","").split(",")[0]
-			capacity = boat.replace("(","").replace(")","").replace("'","").split(",")[1]
-			x = boat.replace("(","").replace(")","").replace("'","").split(",")[2]
-			y = boat.replace("(","").replace(")","").replace("'","").split(",")[3]
-			boat_id = boat.replace("(","").replace(")","").replace("'","").split(",")[4]
-			if boat_info == [] or boat_id not in np.array(boat_info)[:,4]:
-				boat_info.append(int(boat_id))
+	def __init__(self, host, topic, *args, **kwargs):
+		super(BoatInfoThread, self).__init__(*args, **kwargs)
+		self.host = host
+		self.topic = topic
+
+	# Receive messages from Metaclustering and publish to Auctioning
+	def callback_boatinfo(self, ch, method, properties, body):
+		global boat_info
+		if "START" in str(body):
+			boat_info = []
+		elif "END" in str(body):
+			pass
+		else:
+			boat_info_temp = body.decode("utf-8")
+			for boat in boat_info_temp.split("\n"):
+				speed = boat.replace("(","").replace(")","").replace("'","").split(",")[0]
+				capacity = boat.replace("(","").replace(")","").replace("'","").split(",")[1]
+				x = boat.replace("(","").replace(")","").replace("'","").split(",")[2]
+				y = boat.replace("(","").replace(")","").replace("'","").split(",")[3]
+				boat_id = boat.replace("(","").replace(")","").replace("'","").split(",")[4]
+				if boat_info == [] or boat_id not in np.array(boat_info)[:,4]:
+					boat_info.append(int(boat_id))
             
-    def run(self):
-        connection = pika.BlockingConnection(pika.ConnectionParameters(host=self.host, credentials=credentials))
-        channel = connection.channel()
-        channel.exchange_declare(exchange=self.topic, exchange_type='direct')
-        result = channel.queue_declare(exclusive=True)
-        queue = result.method.queue
-        channel.queue_bind(exchange=self.topic,queue=queue,routing_key="key_"+self.topic)
-        
-        #Indicate queue readiness
-        print(' [*] Waiting for messages. To exit, press CTRL+C')
+	def run(self):
+		connection = pika.BlockingConnection(pika.ConnectionParameters(host=self.host, credentials=credentials))
+		channel = connection.channel()
+		channel.exchange_declare(exchange=self.topic, exchange_type='direct')
+		result = channel.queue_declare(exclusive=True)
+		queue = result.method.queue
+		channel.queue_bind(exchange=self.topic,queue=queue,routing_key="key_"+self.topic)
 
-        channel.basic_consume(self.callback_boatinfo,
-                              queue=queue,
-                              no_ack=False)
+		#Indicate queue readiness
+		print(' [*] Waiting for messages. To exit, press CTRL+C')
 
-        channel.start_consuming()  
+		channel.basic_consume(self.callback_boatinfo,
+				      queue=queue,
+				      no_ack=False)
+
+		channel.start_consuming()  
 
 
 class TSPThread(threading.Thread):
