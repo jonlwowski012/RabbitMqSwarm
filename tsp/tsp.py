@@ -48,8 +48,7 @@ class BoatInfoThread(threading.Thread):
 				x = boat.replace("(","").replace(")","").replace("'","").split(",")[2]
 				y = boat.replace("(","").replace(")","").replace("'","").split(",")[3]
 				boat_id = boat.replace("(","").replace(")","").replace("'","").split(",")[4]
-				if boat_info == [] or boat_id not in np.array(boat_info)[:,4]:
-					boat_info.append(int(boat_id))
+				boat_info.append(int(boat_id))
             
 	def run(self):
 		connection = pika.BlockingConnection(pika.ConnectionParameters(host=self.host, credentials=credentials))

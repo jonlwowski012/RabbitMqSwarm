@@ -41,6 +41,7 @@ class FinalPathsThread(threading.Thread):
 		
 	# Receive messages from Metaclustering and publish to Auctioning
 	def callback_clustering(self, ch, method, properties, body):
+		global boat_paths
 		if "START" in str(body):
 			boat_paths_temp[self.boat_id-1]=[]
 		elif "END" in str(body):
@@ -73,6 +74,8 @@ class FinalPathsThread(threading.Thread):
 def viz():
 	for i in range(num_boats):
 		boat_id = i+1
+		boat_paths[i] = []
+		boat_paths_temp[i]=[]
 		final_paths_threads.append(FinalPathsThread(hostname, 'final_path'+"_"+str(boat_id), boat_id))
 		final_paths_threads[len(final_paths_threads)-1].start()
 	
@@ -84,6 +87,7 @@ if __name__ == '__main__':
 		boat_paths_plot = copy.deepcopy(boat_paths)
 		print("len boat_paths: ", len(boat_paths_plot))
 		for i,boat in enumerate(boat_paths_plot):
+			print(boat)
 			if boat is not None:
 				print("len boat ", i, " ", len(boat))
 				for j,pose in enumerate(boat):
