@@ -4,5 +4,5 @@ metadata:
   name: auctioning
 spec:
   containers:
-    - image: 129.114.111.193:5000/auctioning
+    - image: 129.114.111.193:5000/auctioning:v2
       name: auctioning
