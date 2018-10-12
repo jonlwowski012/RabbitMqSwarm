@@ -21,6 +21,7 @@ import copy
 hostname = '129.114.111.193'
 username = "yellow"
 password = "test5243"
+port="31111"
 credentials = pika.PlainCredentials(username, password)
 
 num_boats = 5
@@ -46,7 +47,7 @@ class FinalPathsThread(threading.Thread):
 			boat_paths_temp[self.boat_id-1]=[]
 		elif "END" in str(body):
 			boat_paths[self.boat_id-1] = copy.deepcopy(boat_paths_temp[self.boat_id-1])
-			print("Time to get paths: ", self.end_time-self.start_time, " Boat ID: ", self.boat_id)
+			print("Time to get paths: ", self.end_time-self.start_time, " Boat ID: ", self.boat_id, " len: ", len(boat_paths[self.boat_id-1]))
 		else:
 			poses_temp = body.decode("utf-8")
 			x = float(poses_temp.replace("(","").replace(")","").replace("'","").split(",")[0])
@@ -54,7 +55,7 @@ class FinalPathsThread(threading.Thread):
 			boat_paths_temp[self.boat_id-1].append([x,y])
 		
 	def run(self):
-		connection = pika.BlockingConnection(pika.ConnectionParameters(host=self.host, credentials=credentials))
+		connection = pika.BlockingConnection(pika.ConnectionParameters(host=self.host, credentials=credentials, port=port))
 		channel = connection.channel()
 		channel.exchange_declare(exchange='final_path'+'_'+str(self.boat_id), exchange_type='direct')
 		result = channel.queue_declare(exclusive=True)
@@ -89,7 +90,6 @@ if __name__ == '__main__':
 		for i,boat in enumerate(boat_paths_plot):
 			print(boat)
 			if boat is not None:
-				print("len boat ", i, " ", len(boat))
 				for j,pose in enumerate(boat):
 					if j == 0:
 						plt.scatter(pose[0],pose[1], c=colors[i], marker="*", s=100)

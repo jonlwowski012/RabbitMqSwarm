@@ -20,6 +20,7 @@ import matplotlib.pyplot as plt
 hostname = '129.114.111.193'
 username = "yellow"
 password = "test5243"
+port="31111"
 credentials = pika.PlainCredentials(username, password)
 
 num_boats = 5
@@ -34,7 +35,7 @@ class ClustersThread(threading.Thread):
 		self.host = host
 		self.topic = topic
 		self.boat_id = boat_id
-		self.connection = pika.BlockingConnection(pika.ConnectionParameters(host=self.host, credentials=credentials))
+		self.connection = pika.BlockingConnection(pika.ConnectionParameters(host=self.host, credentials=credentials, port=port))
 		self.channel = self.connection.channel()
 		self.channel.exchange_declare(exchange='tsp_info'+'_'+str(self.boat_id), exchange_type='direct')
 		
@@ -52,7 +53,7 @@ class ClustersThread(threading.Thread):
 			clusters_temp[self.boat_id-1].append([x,y])
 		
 	def run(self):
-		connection = pika.BlockingConnection(pika.ConnectionParameters(host=self.host, credentials=credentials))
+		connection = pika.BlockingConnection(pika.ConnectionParameters(host=self.host, credentials=credentials, port=port))
 		channel = connection.channel()
 		channel.exchange_declare(exchange=self.topic, exchange_type='direct')
 		result = channel.queue_declare(exclusive=True)

@@ -19,6 +19,7 @@ import time
 hostname = '129.114.111.193'
 username = "yellow"
 password = "test5243"
+port="31111"
 credentials = pika.PlainCredentials(username, password)
 
 num_boats = 5
@@ -56,7 +57,7 @@ class FinalPathsThread(threading.Thread):
 			#print("Time to get paths: ", self.end_time-self.start_time, " Boat ID: ", self.boat_id, "Final Path: ", len(poses_list))
 		
 	def run(self):
-		connection = pika.BlockingConnection(pika.ConnectionParameters(host=self.host, credentials=credentials))
+		connection = pika.BlockingConnection(pika.ConnectionParameters(host=self.host, credentials=credentials, port=port))
 		channel = connection.channel()
 		channel.exchange_declare(exchange='final_path'+'_'+str(self.boat_id), exchange_type='direct')
 		result = channel.queue_declare(exclusive=True)
@@ -77,7 +78,7 @@ class ClustersThread(threading.Thread):
 		self.host = host
 		self.topic = topic
 		self.boat_id = boat_id
-		self.connection = pika.BlockingConnection(pika.ConnectionParameters(host=self.host, credentials=credentials))
+		self.connection = pika.BlockingConnection(pika.ConnectionParameters(host=self.host, credentials=credentials, port=port))
 		self.channel = self.connection.channel()
 		self.channel.exchange_declare(exchange='tsp_info'+'_'+str(self.boat_id), exchange_type='direct')
 		
@@ -106,6 +107,7 @@ class ClustersThread(threading.Thread):
 			self.channel.basic_publish(exchange='tsp_info'+'_'+str(self.boat_id),
 								routing_key='key_'+'tsp_info'+'_'+str(self.boat_id),
 								body=entry)
+			time.sleep(0.01)
 			#print(entry)
 		#print( 'tsp_info'+'_'+str(self.boat_id) )
 		# Publish message to outgoing exchange
@@ -116,7 +118,7 @@ class ClustersThread(threading.Thread):
 		#print("Boat ID: ", self.boat_id, " Data: ", entry)
 		
 	def run(self):
-		self.connection = pika.BlockingConnection(pika.ConnectionParameters(host=self.host, credentials=credentials))
+		self.connection = pika.BlockingConnection(pika.ConnectionParameters(host=self.host, credentials=credentials, port=port))
 		self.channel = self.connection.channel()
 		self.channel.exchange_declare(exchange=self.topic, exchange_type='direct')
 		self.result = self.channel.queue_declare(exclusive=True)
@@ -144,6 +146,7 @@ def publish_to_mq(data):
 		channel.basic_publish(exchange='boat_info',
 				            routing_key='key_boat_info',
 				            body=entry) 
+		time.sleep(0.01)
 	channel.basic_publish(exchange='boat_info',
 				            routing_key='key_boat_info',
 				            body="END")
@@ -185,7 +188,7 @@ def asv_service():
 
 if __name__ == '__main__':
 	# Establish outgoing connection to RabbitMQ
-	connection = pika.BlockingConnection(pika.ConnectionParameters(host=hostname, credentials=credentials))
+	connection = pika.BlockingConnection(pika.ConnectionParameters(host=hostname, credentials=credentials, port=port))
 	channel = connection.channel()
 	channel.exchange_declare(exchange='boat_info', exchange_type='direct')
 	asv_service()

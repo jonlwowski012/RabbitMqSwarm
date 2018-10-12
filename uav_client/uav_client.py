@@ -18,6 +18,7 @@ import time
 hostname = '129.114.111.193'
 username = "yellow"
 password = "test5243"
+port="31111"
 credentials = pika.PlainCredentials(username, password)
 
 people = []
@@ -37,6 +38,7 @@ def publish_to_mq(data):
 	channel.basic_publish(exchange='people_found',
 		                    routing_key='key_people_found',
 		                    body="END") 
+	time.sleep(0.01)
 	# Indicate delivery of message
 	#print(" [ >> ] Sent %r" % people)
 
@@ -44,8 +46,8 @@ def publish_to_mq(data):
 def gen_poses():
 	global people
 	min_x = -200
-	while(min_x<0):
-		num_people = int(random.uniform(1,10))
+	while(min_x<200):
+		num_people = int(random.uniform(100,200))
 		while num_people > 0:
 			x = random.uniform(min_x,min_x+10)
 			y = random.uniform(-200,200)
@@ -67,7 +69,7 @@ def uav_service():
 
 if __name__ == '__main__':
 	# Establish outgoing connection to RabbitMQ
-	connection = pika.BlockingConnection(pika.ConnectionParameters(host=hostname, credentials=credentials))
+	connection = pika.BlockingConnection(pika.ConnectionParameters(host=hostname,port=port, credentials=credentials))
 	channel = connection.channel()
 	channel.exchange_declare(exchange='people_found', exchange_type='direct')
 	uav_service()

@@ -20,6 +20,7 @@ import matplotlib.pyplot as plt
 hostname = '129.114.111.193'
 username = "yellow"
 password = "test5243"
+port="31111"
 credentials = pika.PlainCredentials(username, password)
 poses = []
 colors = ['b','g','y','k','c','r']
@@ -47,7 +48,7 @@ def callback(ch, method, properties, body):
 
 if __name__ == '__main__':
 	# Establish incoming connection from UAVs
-	connection_in = pika.BlockingConnection(pika.ConnectionParameters(host=hostname, credentials=credentials))
+	connection_in = pika.BlockingConnection(pika.ConnectionParameters(host=hostname, credentials=credentials, port=port))
 	channel_in = connection_in.channel()
 	channel_in.exchange_declare(exchange='clusters_found', exchange_type='direct')
 	result_in = channel_in.queue_declare(exclusive=True)

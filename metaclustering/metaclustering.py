@@ -20,6 +20,7 @@ import pika
 hostname = '129.114.111.193'
 username = "yellow"
 password = "test5243"
+port="31111"
 credentials = pika.PlainCredentials(username, password)
 
 num_boats = 5
@@ -37,9 +38,11 @@ def publish_to_mq(datas):
 		channel.basic_publish(exchange='metaclusters_found',
 							routing_key='key_metaclusters_found',
 							body=entry) 
+		time.sleep(0.01)
 	channel.basic_publish(exchange='metaclusters_found',
 							routing_key='key_metaclusters_found',
 							body="END") 
+	
 	# Indicate delivery of message
 	#print(" [ >> ] Sent %r" % entry)
 
@@ -52,7 +55,9 @@ def cmeans_clustering(data):
 		if(data != []):
 				### K-means clustering on Clusters
 				k = num_boats
-				cntr, u, u0, d, jm, p, fpc = fuzz.cluster.cmeans(np.asarray(data).T, k, 2, error=0.005, maxiter=5000, init=None, seed=1)
+				t0 = time.time()
+				cntr, u, u0, d, jm, p, fpc = fuzz.cluster.cmeans(np.asarray(data).T, k, 2, error=1.0, maxiter=500, init=None, seed=1)
+				print("time to run: ", time.time()-t0)
 				centroids = []
 				for pt in cntr:
 						centroids.append((pt[0],pt[1])) 
@@ -82,12 +87,12 @@ def callback(ch, method, properties, body):
 
 if __name__ == '__main__':
 	# Establish outgoing connection to Clustering
-	connection = pika.BlockingConnection(pika.ConnectionParameters(host=hostname, credentials=credentials))
+	connection = pika.BlockingConnection(pika.ConnectionParameters(host=hostname, credentials=credentials, port=port))
 	channel = connection.channel()
 	channel.exchange_declare(exchange='metaclusters_found', exchange_type='direct')
 
 	# Establish incoming connection from UAVs
-	connection_in = pika.BlockingConnection(pika.ConnectionParameters(host=hostname, credentials=credentials))
+	connection_in = pika.BlockingConnection(pika.ConnectionParameters(host=hostname, credentials=credentials, port=port))
 	channel_in = connection_in.channel()
 	channel_in.exchange_declare(exchange='clusters_found', exchange_type='direct')
 	result_in = channel_in.queue_declare(exclusive=True)

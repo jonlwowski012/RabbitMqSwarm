@@ -15,6 +15,7 @@ import random
 import pika
 from mpi4py import MPI
 from sklearn import cluster
+import time
 
 ### MPI Functions   ####
 comm = MPI.COMM_WORLD
@@ -24,12 +25,15 @@ size = comm.Get_size()
 hostname = '129.114.111.193'
 username = "yellow"
 password = "test5243"
+port="31111"
 credentials = pika.PlainCredentials(username, password)
 poses = []
 prev_poses_len = 0
-
+connection = None
+connection_in = None
 # Parralel k-means clustering
 def clustering(poses):
+	global connection, connection_in
 	location_array = poses
 	location_array = comm.bcast(location_array, root=0)
 	flag = False
@@ -37,6 +41,8 @@ def clustering(poses):
 	ks = list(range(1,size+1))
 	### while the average cluster radius is greater than 10m
 	while((min_inertia/len(location_array))>= 20 or flag == False):
+		connection.process_data_events()
+		connection_in.process_data_events()
 		ks_copy = list(ks)
 		data = comm.scatter(ks_copy, root=0)
 		### Calculate Clusters
@@ -82,6 +88,7 @@ def publish_to_mq(datas):
 		channel.basic_publish(exchange='clusters_found',
 							routing_key='key_clusters_found',
 							body=entry) 
+		time.sleep(0.01)
 	channel.basic_publish(exchange='clusters_found',
 							routing_key='key_clusters_found',
 							body="END")
@@ -113,12 +120,12 @@ def callback(ch, method, properties, body):
 if __name__ == '__main__':
 	if rank == 0:
 		# Establish outgoing connection to Clustering
-		connection = pika.BlockingConnection(pika.ConnectionParameters(host=hostname, credentials=credentials))
+		connection = pika.BlockingConnection(pika.ConnectionParameters(host=hostname, credentials=credentials, port=port, heartbeat_interval=65000, blocked_connection_timeout=600000))
 		channel = connection.channel()
 		channel.exchange_declare(exchange='clusters_found', exchange_type='direct')
 
 		# Establish incoming connection from UAVs
-		connection_in = pika.BlockingConnection(pika.ConnectionParameters(host=hostname, credentials=credentials))
+		connection_in = pika.BlockingConnection(pika.ConnectionParameters(host=hostname, credentials=credentials, port=port,heartbeat_interval=65000,blocked_connection_timeout=600000))
 		channel_in = connection_in.channel()
 		channel_in.exchange_declare(exchange='people_found', exchange_type='direct')
 		result_in = channel_in.queue_declare(exclusive=True)
