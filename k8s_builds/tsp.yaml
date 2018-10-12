@@ -4,5 +4,5 @@ metadata:
   name: tsp
 spec:
   containers:
-    - image: 129.114.111.193:5000/tsp
+    - image: 129.114.111.193:5000/tsp:v3
       name: tsp
