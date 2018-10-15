@@ -27,6 +27,7 @@ boat_info = []
 clusters = []
 clusters_threads = []
 final_paths_threads = []
+final_paths = []
 
 class FinalPathsThread(threading.Thread):
 	def __init__(self, host, topic, boat_id, *args, **kwargs):
@@ -36,25 +37,25 @@ class FinalPathsThread(threading.Thread):
 		self.boat_id = boat_id
 		self.start_time = time.time()
 		self.end_time = 0.0
-		
+		self.final_paths_temp = []
 	# Receive messages from Metaclustering and publish to Auctioning
 	def callback_clustering(self, ch, method, properties, body):
-		poses_list = []
-		poses_temp = body.decode("utf-8")
-		for pose in poses_temp.split("\n")[0].split(">"):
-			if len(pose.replace("(","").replace(")","").replace("'","").split(",")) == 2:
-				x = pose.replace("(","").replace(")","").replace("'","").split(",")[0]
-				y = pose.replace("(","").replace(")","").replace("'","").split(",")[1]
-				#print(clusters[self.boat_id-1])
-				if [float(x),float(y)] not in poses_list:
-					#print(" [x] Received ", x, " " , y)
-					poses_list.append([float(x),float(y)])
-		#print(poses_list)
-		if self.end_time == 0.0:
-			self.end_time = time.time()
-		if len(poses_list) > 0:
-			pass
-			#print("Time to get paths: ", self.end_time-self.start_time, " Boat ID: ", self.boat_id, "Final Path: ", len(poses_list))
+		global final_paths
+		if "START" in str(body):
+			self.final_paths_temp = []
+		elif "END" in str(body):
+			if self.end_time == 0.0:
+				self.end_time = time.time()
+			if len(self.final_paths_temp) > 0:
+				print("Time to get paths: ", self.end_time-self.start_time, " Boat ID: ", self.boat_id, "Final Path: ", len(self.final_paths_temp))
+			final_paths[self.boat_id-1] = self.final_paths_temp
+		else:
+			poses_temp = body.decode("utf-8")
+			for pose in poses_temp.split("\n")[0].split(">"):
+				if len(pose.replace("(","").replace(")","").replace("'","").split(",")) == 2:
+					x = pose.replace("(","").replace(")","").replace("'","").split(",")[0]
+					y = pose.replace("(","").replace(")","").replace("'","").split(",")[1]
+					self.final_paths_temp.append([float(x),float(y)])
 		
 	def run(self):
 		connection = pika.BlockingConnection(pika.ConnectionParameters(host=self.host, credentials=credentials, port=port))
@@ -170,13 +171,14 @@ def gen_poses():
 		
 		# Establish incoming connection from UAVs
 		clusters.append([])
+		final_paths.append([])
 		clusters_threads.append(ClustersThread(hostname, 'auctioning'+"_"+str(boat_id), boat_id))
 		clusters_threads[len(clusters_threads)-1].start()
 		final_paths_threads.append(FinalPathsThread(hostname, 'final_path'+"_"+str(boat_id), boat_id))
 		final_paths_threads[len(final_paths_threads)-1].start()
 		boat_id += 1
 	while(1):
-		print(boat_info)
+		#print(boat_info)
 		publish_to_mq(boat_info)
 		time.sleep(1)
 

@@ -51,21 +51,21 @@ class AuctionThread(threading.Thread):
             
     def run(self):
         global credentials
-        connection = pika.BlockingConnection(pika.ConnectionParameters(host=self.host, credentials=credentials, port=port))
-        channel = connection.channel()
-        channel.exchange_declare(exchange=self.topic, exchange_type='direct')
-        result = channel.queue_declare(exclusive=True)
-        queue = result.method.queue
-        channel.queue_bind(exchange=self.topic,queue=queue,routing_key="key_"+self.topic)
+        self.connection = pika.BlockingConnection(pika.ConnectionParameters(host=self.host, credentials=credentials, port=port))
+        self.channel = self.connection.channel()
+        self.channel.exchange_declare(exchange=self.topic, exchange_type='direct')
+        self.result = self.channel.queue_declare(exclusive=True)
+        self.queue = self.result.method.queue
+        self.channel.queue_bind(exchange=self.topic,queue=self.queue,routing_key="key_"+self.topic)
         
         #Indicate queue readiness
         print(' [*] Waiting for messages. To exit, press CTRL+C')
 
-        channel.basic_consume(self.callback_clustering,
-                              queue=queue,
+        self.channel.basic_consume(self.callback_clustering,
+                              queue=self.queue,
                               no_ack=False)
 
-        channel.start_consuming()  
+        self.channel.start_consuming()  
         
 class ClustersThread(threading.Thread):
     def __init__(self, host, topic, *args, **kwargs):
@@ -87,21 +87,21 @@ class ClustersThread(threading.Thread):
             clusters.append([x,y])
         
     def run(self):
-        connection = pika.BlockingConnection(pika.ConnectionParameters(host=self.host, credentials=credentials, port=port))
-        channel = connection.channel()
-        channel.exchange_declare(exchange=self.topic, exchange_type='direct')
-        result = channel.queue_declare(exclusive=True)
-        queue = result.method.queue
-        channel.queue_bind(exchange=self.topic,queue=queue,routing_key="key_"+self.topic)
+        self.connection = pika.BlockingConnection(pika.ConnectionParameters(host=self.host, credentials=credentials, port=port))
+        self.channel = self.connection.channel()
+        self.channel.exchange_declare(exchange=self.topic, exchange_type='direct')
+        self.result = self.channel.queue_declare(exclusive=True)
+        self.queue = self.result.method.queue
+        self.channel.queue_bind(exchange=self.topic,queue=self.queue,routing_key="key_"+self.topic)
         
         #Indicate queue readiness
         print(' [*] Waiting for messages. To exit, press CTRL+C')
 
-        channel.basic_consume(self.callback_clustering,
-                              queue=queue,
+        self.channel.basic_consume(self.callback_clustering,
+                              queue=self.queue,
                               no_ack=False)
 
-        channel.start_consuming()       
+        self.channel.start_consuming()       
         
 class BoatInfoThread(threading.Thread):
     def __init__(self, host, topic, *args, **kwargs):
@@ -128,21 +128,21 @@ class BoatInfoThread(threading.Thread):
                     boat_info.append([float(speed),float(capacity),float(x),float(y), int(boat_id)])
             
     def run(self):
-        connection = pika.BlockingConnection(pika.ConnectionParameters(host=self.host, credentials=credentials, port=port))
-        channel = connection.channel()
-        channel.exchange_declare(exchange=self.topic, exchange_type='direct')
-        result = channel.queue_declare(exclusive=True)
-        queue = result.method.queue
-        channel.queue_bind(exchange=self.topic,queue=queue,routing_key="key_"+self.topic)
+        self.connection = pika.BlockingConnection(pika.ConnectionParameters(host=self.host, credentials=credentials, port=port))
+        self.channel = self.connection.channel()
+        self.channel.exchange_declare(exchange=self.topic, exchange_type='direct')
+        self.result = self.channel.queue_declare(exclusive=True)
+        self.queue = self.result.method.queue
+        self.channel.queue_bind(exchange=self.topic,queue=self.queue,routing_key="key_"+self.topic)
         
         #Indicate queue readiness
         print(' [*] Waiting for messages. To exit, press CTRL+C')
 
-        channel.basic_consume(self.callback_boatinfo,
-                              queue=queue,
+        self.channel.basic_consume(self.callback_boatinfo,
+                              queue=self.queue,
                               no_ack=False)
 
-        channel.start_consuming()  
+        self.channel.start_consuming()  
         
 ### Euclidean Distance
 def distance(p0, p1):

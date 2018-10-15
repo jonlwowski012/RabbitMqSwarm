@@ -87,12 +87,12 @@ def callback(ch, method, properties, body):
 
 if __name__ == '__main__':
 	# Establish outgoing connection to Clustering
-	connection = pika.BlockingConnection(pika.ConnectionParameters(host=hostname, credentials=credentials, port=port))
+	connection = pika.BlockingConnection(pika.ConnectionParameters(host=hostname, credentials=credentials, port=port, heartbeat_interval=0, blocked_connection_timeout=600000))
 	channel = connection.channel()
 	channel.exchange_declare(exchange='metaclusters_found', exchange_type='direct')
 
 	# Establish incoming connection from UAVs
-	connection_in = pika.BlockingConnection(pika.ConnectionParameters(host=hostname, credentials=credentials, port=port))
+	connection_in = pika.BlockingConnection(pika.ConnectionParameters(host=hostname, credentials=credentials, port=port, heartbeat_interval=0, blocked_connection_timeout=600000))
 	channel_in = connection_in.channel()
 	channel_in.exchange_declare(exchange='clusters_found', exchange_type='direct')
 	result_in = channel_in.queue_declare(exclusive=True)

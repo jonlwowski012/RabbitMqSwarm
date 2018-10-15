@@ -38,21 +38,26 @@ class FinalPathsThread(threading.Thread):
 		self.topic = topic
 		self.boat_id = boat_id
 		self.start_time = time.time()
-		self.end_time = time.time()
-		
+		self.end_time = 0.0
+		self.boat_paths_temp = []
 	# Receive messages from Metaclustering and publish to Auctioning
 	def callback_clustering(self, ch, method, properties, body):
 		global boat_paths
 		if "START" in str(body):
-			boat_paths_temp[self.boat_id-1]=[]
+			self.boat_paths_temp = []
 		elif "END" in str(body):
-			boat_paths[self.boat_id-1] = copy.deepcopy(boat_paths_temp[self.boat_id-1])
-			print("Time to get paths: ", self.end_time-self.start_time, " Boat ID: ", self.boat_id, " len: ", len(boat_paths[self.boat_id-1]))
+			if self.end_time == 0.0:
+				self.end_time = time.time()
+			if len(self.boat_paths_temp) > 0:
+				print("Time to get paths: ", self.end_time-self.start_time, " Boat ID: ", self.boat_id, "Final Path: ", len(self.boat_paths_temp))
+			boat_paths[self.boat_id-1] = self.boat_paths_temp
 		else:
 			poses_temp = body.decode("utf-8")
-			x = float(poses_temp.replace("(","").replace(")","").replace("'","").split(",")[0])
-			y = float(poses_temp.replace("(","").replace(")","").replace("'","").split(",")[1])
-			boat_paths_temp[self.boat_id-1].append([x,y])
+			for pose in poses_temp.split("\n")[0].split(">"):
+				if len(pose.replace("(","").replace(")","").replace("'","").split(",")) == 2:
+					x = pose.replace("(","").replace(")","").replace("'","").split(",")[0]
+					y = pose.replace("(","").replace(")","").replace("'","").split(",")[1]
+					self.boat_paths_temp.append([float(x),float(y)])
 		
 	def run(self):
 		connection = pika.BlockingConnection(pika.ConnectionParameters(host=self.host, credentials=credentials, port=port))
@@ -68,7 +73,7 @@ class FinalPathsThread(threading.Thread):
 							  queue=queue,
 							  no_ack=False)
 
-		channel.start_consuming()  
+		channel.start_consuming() 
 		
 
 ### Main Service Client for ASV
@@ -88,7 +93,6 @@ if __name__ == '__main__':
 		boat_paths_plot = copy.deepcopy(boat_paths)
 		print("len boat_paths: ", len(boat_paths_plot))
 		for i,boat in enumerate(boat_paths_plot):
-			print(boat)
 			if boat is not None:
 				for j,pose in enumerate(boat):
 					if j == 0:

@@ -120,7 +120,7 @@ def callback(ch, method, properties, body):
 if __name__ == '__main__':
 	if rank == 0:
 		# Establish outgoing connection to Clustering
-		connection = pika.BlockingConnection(pika.ConnectionParameters(host=hostname, credentials=credentials, port=port, heartbeat_interval=65000, blocked_connection_timeout=600000))
+		connection = pika.BlockingConnection(pika.ConnectionParameters(host=hostname, credentials=credentials, port=port, heartbeat_interval=0, blocked_connection_timeout=600000))
 		channel = connection.channel()
 		channel.exchange_declare(exchange='clusters_found', exchange_type='direct')
 
