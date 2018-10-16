@@ -101,7 +101,8 @@ if __name__ == '__main__':
 						plt.scatter(pose[0],pose[1], c=colors[i])
 					if j < len(boat)-1:
 						plt.arrow(boat[j][0],boat[j][1],boat[j+1][0]-boat[j][0],boat[j+1][1]-boat[j][1], fc=colors[i], ec=colors[i])
-				
+		plt.ylim([-300,300])
+		plt.xlim([-300,300])
 		plt.draw()
 		plt.pause(0.01)
 		plt.gcf().clear()

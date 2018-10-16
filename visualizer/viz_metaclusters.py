@@ -84,6 +84,8 @@ if __name__ == '__main__':
 			fig = plt.gcf()
 			ax = fig.gca()
 			ax.add_artist(circle1)
+			plt.ylim([-300,300])
+			plt.xlim([-300,300])
 			plt.draw()
 		plt.pause(1.0)
 		plt.gcf().clear()

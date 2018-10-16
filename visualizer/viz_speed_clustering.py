@@ -23,38 +23,39 @@ password = "test5243"
 port="31111"
 credentials = pika.PlainCredentials(username, password)
 poses = []
+colors = ['b','g','y','k','c','r']
+i = 0
 
 # Receive messages from UAVs and publish to Clustering
 def callback(ch, method, properties, body):
-	global poses
-	if "START" in str(body):
+	global poses, i
+	if 'START' in str(body):
 		poses = []
-	elif "END" in str(body):
-		for pose in poses:
-			plt.scatter(pose[0],pose[1],c='b',s=30)
+	elif 'END' in str(body):
+		plt.gcf().clear()
+	else:
+		poses_temp = body.decode("utf-8")
+		x = float(poses_temp.replace("(","").replace(")","").replace("'","").split(",")[0])
+		y = float(poses_temp.replace("(","").replace(")","").replace("'","").split(",")[1])
+		plt.scatter(float(x),float(y),c=colors[i%len(colors)],s=5)
+		circle1=plt.Circle((float(x),float(y)),color=colors[i%len(colors)], radius=20,fill=False)
+		fig = plt.gcf()
+		ax = fig.gca()
 		plt.ylim([-300,300])
 		plt.xlim([-300,300])
+		ax.add_artist(circle1)
 		plt.draw()
-		plt.pause(0.001)
-	else:
-		body_temp = str(body).replace("(","").replace(")","").replace("b","")
-		body_temp = body_temp.replace("'","")
-		x = float(body_temp.split(',')[0])
-		y = float(body_temp.split(',')[1])
-		poses.append([x,y])
-	#print("Len Poses: ", len(poses))
-
+		plt.pause(0.01)
+		i += 1
 
 if __name__ == '__main__':
 	# Establish incoming connection from UAVs
-	plt.draw()
-	plt.pause(0.01)
 	connection_in = pika.BlockingConnection(pika.ConnectionParameters(host=hostname, credentials=credentials, port=port))
 	channel_in = connection_in.channel()
-	channel_in.exchange_declare(exchange='people_found', exchange_type='direct')
+	channel_in.exchange_declare(exchange='speed_clusters_found', exchange_type='direct')
 	result_in = channel_in.queue_declare(exclusive=True)
 	queue_in_name = result_in.method.queue
-	channel_in.queue_bind(exchange='people_found',queue=queue_in_name,routing_key='key_people_found')
+	channel_in.queue_bind(exchange='speed_clusters_found',queue=queue_in_name,routing_key='key_speed_clusters_found')
 
 	# Indicate queue readiness
 	print(' [*] Waiting for messages. To exit, press CTRL+C')
@@ -63,6 +64,8 @@ if __name__ == '__main__':
 	channel_in.basic_consume(callback,queue=queue_in_name,no_ack=False)
 
 	# Begin consuming from UAVs
+	plt.draw()
+	plt.pause(0.01)
 	channel_in.start_consuming()
 	
 

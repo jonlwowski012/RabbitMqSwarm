@@ -42,6 +42,8 @@ def callback(ch, method, properties, body):
 		fig = plt.gcf()
 		ax = fig.gca()
 		ax.add_artist(circle1)
+		plt.ylim([-300,300])
+		plt.xlim([-300,300])
 		plt.draw()
 		plt.pause(0.01)
 		i += 1
