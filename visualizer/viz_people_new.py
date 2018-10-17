@@ -25,19 +25,25 @@ with open('config.yaml') as f:
 	port = config['port']
 credentials = pika.PlainCredentials(username, password)
 
+### Global variable to store people count
+people_count = 0
+
 # Receive messages from UAVs and plot
 def callback(ch, method, properties, body):
+	global people_count
+	people_count += 1
 	person = json.loads(body.decode('utf-8'))
 	plt.scatter(float(person['x_position']),float(person['y_position']))
-	plt.draw()
-	plt.pause(0.001)
+	if people_count % 10 == 0:
+		plt.draw()
+		plt.pause(0.01)
 
 if __name__ == '__main__':
 	# Establish incoming connection from UAVs
 	plt.draw()
 	plt.pause(0.01)
-	plt.ylim([-300,300])
-	plt.xlim([-300,300])
+	plt.xlim([-300, 300])
+	plt.ylim([-300, 300])
 	connection_in = pika.BlockingConnection(pika.ConnectionParameters(host=hostname, credentials=credentials, port=port))
 	channel_in = connection_in.channel()
 	channel_in.exchange_declare(exchange='people_found', exchange_type='direct')
