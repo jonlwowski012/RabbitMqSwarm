@@ -31,26 +31,6 @@ def callback(ch, method, properties, body):
 	plt.scatter(float(person['x_position']),float(person['y_position']))
 	plt.draw()
 	plt.pause(0.001)
-	
-	
-	'''lobal poses
-	if "START" in str(body):
-		poses = []
-	elif "END" in str(body):
-		for pose in poses:
-			plt.scatter(pose[0],pose[1],c='b',s=30)
-		plt.ylim([-300,300])
-		plt.xlim([-300,300])
-		plt.draw()
-		plt.pause(0.001)
-	else:
-		body_temp = str(body).replace("(","").replace(")","").replace("b","")
-		body_temp = body_temp.replace("'","")
-		x = float(body_temp.split(',')[0])
-		y = float(body_temp.split(',')[1])
-		poses.append([x,y])
-	#print("Len Poses: ", len(poses))'''
-
 
 if __name__ == '__main__':
 	# Establish incoming connection from UAVs
