@@ -31,19 +31,24 @@ people_count = 0
 # Receive messages from UAVs and plot
 def callback(ch, method, properties, body):
 	global people_count
+	#Plot person found
 	people_count += 1
 	person = json.loads(body.decode('utf-8'))
 	plt.scatter(float(person['x_position']),float(person['y_position']))
+	
+	# Update plot
 	if people_count % 10 == 0:
 		plt.draw()
 		plt.pause(0.01)
 
 if __name__ == '__main__':
-	# Establish incoming connection from UAVs
+	# Draw inital plot
 	plt.draw()
 	plt.pause(0.01)
 	plt.xlim([-300, 300])
 	plt.ylim([-300, 300])
+	
+	# Establish incoming connection from UAVs
 	connection_in = pika.BlockingConnection(pika.ConnectionParameters(host=hostname, credentials=credentials, port=port))
 	channel_in = connection_in.channel()
 	channel_in.exchange_declare(exchange='people_found', exchange_type='direct')
