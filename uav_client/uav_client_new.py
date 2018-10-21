@@ -48,9 +48,10 @@ def gen_poses():
 			person['x_position'] = x
 			person['y_position'] = y
 			person['uav_id'] = uav_id
-			person['timestamp'] = time.time()
+			person['timestamp'] = time.strftime('%Y-%m-%d %H:%M:%S')
 			num_people -= 1
 			publish_to_mq(person)
+			time.sleep(0.01)
 		min_x += 25
 		time.sleep(1)
 
