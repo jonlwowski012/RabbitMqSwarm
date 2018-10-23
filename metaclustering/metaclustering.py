@@ -47,11 +47,16 @@ with open('config.yaml') as f:
 credentials = pika.PlainCredentials(username, password)
 
 # Sends locations of metaclusters found to Rabbit
-def publish_to_mq(metaclusters,num_clusters,time_stamp):
-	for metacluster in metaclusters:
+def publish_to_mq(metaclusters, labels, clusters_found, num_clusters,time_stamp):
+	for index,metacluster in enumerate(metaclusters):
+		people_in_metacluster = 0
+		for index2,label in enumerate(labels):
+			if label == index:
+				people_in_metacluster += clusters_found[index2][2]
 		entry = {}
 		entry['x_position'] = metacluster[0]
 		entry['y_position'] = metacluster[1]
+		entry['people_in_metacluster'] = people_in_metacluster
 		entry['num_clusters'] = num_clusters
 		entry['time_stamp'] = time_stamp
 		metacluster_to_send = json.dumps(entry)
@@ -68,15 +73,21 @@ def cmeans_clustering(data, num_boats):
 		if(data != []):
 				### K-means clustering on Clusters
 				k = num_boats
-				t0 = time.time()
-				cntr, u, u0, d, jm, p, fpc = fuzz.cluster.cmeans(np.asarray(data).T, k, 2, error=1.0, maxiter=500, init=None, seed=1)
-				print("time to run: ", time.time()-t0)
-				centroids = []
-				for pt in cntr:
-						centroids.append((pt[0],pt[1])) 
+				kmeans = cluster.KMeans(init='k-means++', n_init=10, n_clusters=k, random_state=1)
+				print(np.asarray(data).shape)
+				kmeans.fit(np.asarray(data))
+				centroids_temp = kmeans.cluster_centers_
+				labels = kmeans.labels_
+				inertia = kmeans.inertia_
 
-				cluster_membership = np.argmax(u, axis=0)
-				labels = u
+				### Calculate Radius for Cluster Msg
+				radius = inertia/len(data)
+
+				### Calculate Centroids of Clusters
+				centroids = centroids_temp
+
+				### Get Labels for all people's locations
+				labels = kmeans.labels_ 
 
 		return centroids,labels,location_array
 
@@ -87,15 +98,16 @@ if __name__ == '__main__':
 	channel.exchange_declare(exchange='metaclusters_found', exchange_type='direct')
 
 	while(1):
-		mycursor.execute("SELECT x_position, y_position FROM speed_clusters_found")
+		mycursor.execute("SELECT x_position, y_position, people_in_cluster FROM speed_clusters_found WHERE time_stamp = (SELECT MAX(time_stamp) FROM speed_clusters_found)")
 		clusters_found = mycursor.fetchall()
 		mycursor.execute("SELECT * FROM boat_info")
 		num_boats = len(mycursor.fetchall())
-		if len(clusters_found) > 0:
+		print(num_boats)
+		if len(clusters_found) > num_boats and num_boats > 0:
 			num_clusters = len(clusters_found)
 			t0 = time.time()
-			metaclusters,labels,location_array = cmeans_clustering(clusters_found, num_boats)
+			metaclusters,labels,location_array = cmeans_clustering(np.array(clusters_found)[:,0:2], num_boats)
 			print("Time to Metacluster: ", time.time()-t0, " Metaclusters Found: ", len(metaclusters))
-			publish_to_mq(metaclusters, num_clusters, time.strftime('%Y-%m-%d %H:%M:%S'))
+			publish_to_mq(metaclusters, labels, clusters_found, num_clusters, time.strftime('%Y-%m-%d %H:%M:%S'))
 		mydb.commit()
 

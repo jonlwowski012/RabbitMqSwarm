@@ -62,8 +62,8 @@ def callback(ch, method, properties, body):
 	cluster = json.loads(body.decode('utf-8'))
 
 	# Save person into mysql
-	sql = "INSERT INTO speed_clusters_found (x_position, y_position, num_people, time_stamp) VALUES (%s, %s, %s, %s)"
-	val = (cluster['x_position'], cluster['y_position'],cluster['num_people'],cluster['time_stamp'])
+	sql = "INSERT INTO speed_clusters_found (x_position, y_position, num_people, time_stamp, people_in_cluster) VALUES (%s, %s, %s, %s, %s)"
+	val = (cluster['x_position'], cluster['y_position'],cluster['num_people'],cluster['time_stamp'], cluster['people_in_cluster'])
 	mycursor.execute(sql, val)
 	mydb.commit()
 

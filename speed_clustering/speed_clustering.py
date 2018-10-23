@@ -77,14 +77,20 @@ def clustering(poses):
 	### Get Labels for all people's locations
 	labels = kmeans.labels_
 	#print(centroids)
-	return centroids
+	return centroids, labels
 
 # Sends locations of clusters found to Rabbit
-def publish_to_mq(clusters, num_people, time_stamp):
-	for cluster in clusters:
+def publish_to_mq(clusters, labels, num_people, time_stamp):
+	for index, cluster in enumerate(clusters):
+		people_count = 0
+		# Get number of people in  the cluster
+		for  label in labels:
+			if label == index:
+				people_count += 1
 		entry = {}
 		entry['x_position'] = cluster[0]
 		entry['y_position'] = cluster[1]
+		entry['people_in_cluster'] = people_count
 		entry['num_people'] = num_people
 		entry['time_stamp'] = time_stamp
 		cluster_to_send = json.dumps(entry)
@@ -106,7 +112,7 @@ if __name__ == '__main__':
 		if len(people_found) > 0 and len(people_found)%10 == 0:
 			num_people = len(people_found)
 			t0 = time.time()
-			clusters = clustering(people_found)
+			clusters, labels = clustering(people_found)
 			print("Time to Cluster: ", time.time()-t0, " Clusters Found: ", len(clusters))
-			publish_to_mq(clusters, num_people, time.strftime('%Y-%m-%d %H:%M:%S'))
+			publish_to_mq(clusters, labels, num_people, time.strftime('%Y-%m-%d %H:%M:%S'))
 		mydb.commit()
