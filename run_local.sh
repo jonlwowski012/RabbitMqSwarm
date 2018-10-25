@@ -19,6 +19,7 @@ cd visualizer && xterm -e python3 viz_metaclustering.py &
 cd visualizer && xterm -e python3 viz_speed_clustering_new.py &
 cd visualizer && xterm -e python3 viz_people_new.py &
 cd visualizer && xterm -e python3 viz_boats.py &
+cd visualizer && xterm -e python3 viz_auctioning.py &
 sleep 5
 
 # Launch ASVs

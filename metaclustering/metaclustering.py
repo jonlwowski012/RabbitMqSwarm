@@ -13,6 +13,7 @@ import random
 from sklearn import cluster
 import skfuzzy as fuzz
 import time
+from datetime import datetime
 import pika
 import yaml
 import json
@@ -64,7 +65,7 @@ def publish_to_mq(metaclusters, labels, clusters_found, num_clusters,time_stamp)
 		channel.basic_publish(exchange='metaclusters_found',
 							routing_key='key_metaclusters_found',
 							body=metacluster_to_send) 
-		time.sleep(0.01)
+		time.sleep(0.1)
 
 
 ### Metaclustering function
@@ -98,16 +99,19 @@ if __name__ == '__main__':
 	channel.exchange_declare(exchange='metaclusters_found', exchange_type='direct')
 
 	while(1):
-		mycursor.execute("SELECT x_position, y_position, people_in_cluster FROM speed_clusters_found WHERE time_stamp = (SELECT MAX(time_stamp) FROM speed_clusters_found)")
+		curr_time = None
+		mycursor.execute("SELECT x_position, y_position, people_in_cluster, time_stamp FROM speed_clusters_found WHERE time_stamp = (SELECT MAX(time_stamp) FROM speed_clusters_found)")
 		clusters_found = mycursor.fetchall()
 		mycursor.execute("SELECT * FROM boat_info")
 		num_boats = len(mycursor.fetchall())
 		print(num_boats)
 		if len(clusters_found) > num_boats and num_boats > 0:
-			num_clusters = len(clusters_found)
-			t0 = time.time()
-			metaclusters,labels,location_array = cmeans_clustering(np.array(clusters_found)[:,0:2], num_boats)
-			print("Time to Metacluster: ", time.time()-t0, " Metaclusters Found: ", len(metaclusters))
-			publish_to_mq(metaclusters, labels, clusters_found, num_clusters, time.strftime('%Y-%m-%d %H:%M:%S'))
+			if curr_time != clusters_found[0][3]:
+				curr_time = clusters_found[0][3]
+				num_clusters = len(clusters_found)
+				t0 = time.time()
+				metaclusters,labels,location_array = cmeans_clustering(np.array(clusters_found)[:,0:2], num_boats)
+				print("Time to Metacluster: ", time.time()-t0, " Metaclusters Found: ", len(metaclusters))
+				publish_to_mq(metaclusters, labels, clusters_found, num_clusters, datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f'))
 		mydb.commit()
 

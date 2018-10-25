@@ -25,37 +25,30 @@ with open('config.yaml') as f:
 	port = config['port']
 credentials = pika.PlainCredentials(username, password)
 
-connection = None
-
 colors = ['b','g','y','k','c','r']
+curr_time = None
 metaclusters_count = 0
-curr_num_clusters = 0
 
 # Receive messages from UAVs and publish to Clustering
 def callback(ch, method, properties, body):
-	global metaclusters_count, curr_num_clusters
+	global metaclusters_count,curr_time
 	fig = plt.gcf()
 	ax = fig.gca()
+	plt.ylim([-300,300])
+	plt.xlim([-300,300])
 	#Plot clusters found
-	metaclusters_count += 1
 	metacluster = json.loads(body.decode('utf-8'))
-	print(metacluster['num_clusters'],curr_num_clusters)
-	if curr_num_clusters + 10 < metacluster['num_clusters']:
-		plt.scatter(float(metacluster['x_position']),float(metacluster['y_position']),c=colors[metaclusters_count%len(colors)],s=5)
-		circle1=plt.Circle((float(metacluster['x_position']),float(metacluster['y_position'])),color=colors[metaclusters_count%len(colors)], radius=100,fill=False)
-		plt.ylim([-300,300])
-		plt.xlim([-300,300])
-		ax.add_artist(circle1)
-		curr_num_clusters = metacluster['num_clusters']
+	metaclusters_count += 1
+	plt.scatter(float(metacluster['x_position']),float(metacluster['y_position']),c=colors[metaclusters_count%len(colors)],s=5)
+	circle1=plt.Circle((float(metacluster['x_position']),float(metacluster['y_position'])),color=colors[metaclusters_count%len(colors)], radius=100,fill=False)
+	ax.add_artist(circle1)
+	print(curr_time,metacluster['time_stamp'])
+	if curr_time != metacluster['time_stamp']:
+		curr_time = metacluster['time_stamp']
 		plt.draw()
 		plt.pause(0.1)
 		fig.clear()
-	elif curr_num_clusters == metacluster['num_clusters']:
-		plt.scatter(float(metacluster['x_position']),float(metacluster['y_position']),c=colors[metaclusters_count%len(colors)],s=5)
-		circle1=plt.Circle((float(metacluster['x_position']),float(metacluster['y_position'])),color=colors[metaclusters_count%len(colors)], radius=100,fill=False)
-		plt.ylim([-300,300])
-		plt.xlim([-300,300])
-		ax.add_artist(circle1)
+		plt.gcf().clear()
 
 if __name__ == '__main__':
 	# Establish incoming connection from Speed Clusters
@@ -74,7 +67,10 @@ if __name__ == '__main__':
 
 	# Begin consuming from UAVs
 	plt.draw()
+	plt.gcf().clear()
 	plt.pause(0.01)
+	plt.ylim([-300,300])
+	plt.xlim([-300,300])
 	channel_in.start_consuming()
 	
 

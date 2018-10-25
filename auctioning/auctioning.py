@@ -11,6 +11,7 @@
 import numpy as np
 import random
 import time
+from datetime import datetime
 import pika
 import yaml
 import json
@@ -96,7 +97,7 @@ def auctioning(auction_info, boat_info, num_boats, clusters_info):
 
 # Sends auction info to Rabbit
 def publish_to_mq(auction_info, boat_info):
-	time_stamp = time.strftime('%Y-%m-%d %H:%M:%S')
+	time_stamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')
 	for assign_index,assignment in enumerate(auction_info):
 		for pose_index, pose in enumerate(assignment):
 			entry = {}
@@ -116,19 +117,21 @@ if __name__ == '__main__':
 	connection = pika.BlockingConnection(pika.ConnectionParameters(host=hostname, credentials=credentials, port=port, heartbeat_interval=0, blocked_connection_timeout=600000))
 	channel = connection.channel()
 	channel.exchange_declare(exchange='auctioning_info', exchange_type='direct')
-	
+	curr_time = None
 	while(1):
-		mycursor.execute("SELECT x_position, y_position, people_in_metacluster FROM metaclusters_found WHERE time_stamp = (SELECT MAX(time_stamp) FROM metaclusters_found)")
+		mycursor.execute("SELECT x_position, y_position, people_in_metacluster, time_stamp FROM metaclusters_found WHERE time_stamp = (SELECT MAX(time_stamp) FROM metaclusters_found)")
 		metaclusters_found = mycursor.fetchall()
 		mycursor.execute("SELECT * FROM boat_info")
 		boat_info = mycursor.fetchall()
 		num_boats = len(boat_info)
 		mycursor.execute("SELECT x_position, y_position, people_in_cluster FROM speed_clusters_found WHERE time_stamp = (SELECT MAX(time_stamp) FROM speed_clusters_found)")
 		clusters_found = mycursor.fetchall()
-		print(len(metaclusters_found), num_boats)
 		if len(metaclusters_found) >= num_boats and num_boats > 0:
-			auction_info = auctioning(metaclusters_found, boat_info, num_boats, clusters_found)
-			publish_to_mq(auction_info,boat_info)
+			print(metaclusters_found[0][3] != curr_time)
+			if metaclusters_found[0][3] != curr_time:
+				curr_time = metaclusters_found[0][3]
+				auction_info = auctioning(metaclusters_found, boat_info, num_boats, clusters_found)
+				publish_to_mq(auction_info,boat_info)
 		mydb.commit()
 	
 

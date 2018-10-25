@@ -28,37 +28,41 @@ credentials = pika.PlainCredentials(username, password)
 connection = None
 
 colors = ['b','g','y','k','c','r']
-clusters_count = 0
+auction_count = 0
+curr_num_auction = 0
+boat_ids = []
 curr_time = None
 
 # Receive messages from UAVs and publish to Clustering
 def callback(ch, method, properties, body):
-	global clusters_count, curr_time
+	global auction_count, curr_num_auction, boat_ids, curr_time
+
+	auction_info = json.loads(body.decode('utf-8'))
+	if auction_info['boat_id'] not in boat_ids:
+		boat_ids.append(auction_info['boat_id'])
+
 	fig = plt.gcf()
 	ax = fig.gca()
-	#Plot clusters found
-	clusters_count += 1
-	cluster = json.loads(body.decode('utf-8'))
-	print(curr_time,cluster['time_stamp'])
-	if curr_time != cluster['time_stamp']:
-		curr_time = cluster['time_stamp']
-		fig.clear()
-	plt.scatter(float(cluster['x_position']),float(cluster['y_position']),c=colors[clusters_count%len(colors)],s=5)
-	circle1=plt.Circle((float(cluster['x_position']),float(cluster['y_position'])),color=colors[clusters_count%len(colors)], radius=20,fill=False)
+	plt.scatter(float(auction_info['x_position']),float(auction_info['y_position']),c=colors[boat_ids.index(auction_info['boat_id'])%len(colors)],s=5)
+	circle1=plt.Circle((float(auction_info['x_position']),float(auction_info['y_position'])),color=colors[boat_ids.index(auction_info['boat_id'])%len(colors)], radius=20,fill=False)
 	plt.ylim([-300,300])
 	plt.xlim([-300,300])
 	ax.add_artist(circle1)
-	plt.draw()
-	plt.pause(0.01)
+	print(curr_time, auction_info['time_stamp'])
+	if curr_time != auction_info['time_stamp']:
+		curr_time = auction_info['time_stamp']
+		plt.draw()
+		plt.pause(0.1)
+		fig.clear()
 
 if __name__ == '__main__':
 	# Establish incoming connection from Speed Clusters
 	connection_in = pika.BlockingConnection(pika.ConnectionParameters(host=hostname, credentials=credentials, port=port))
 	channel_in = connection_in.channel()
-	channel_in.exchange_declare(exchange='speed_clusters_found', exchange_type='direct')
+	channel_in.exchange_declare(exchange='auctioning_info', exchange_type='direct')
 	result_in = channel_in.queue_declare(exclusive=True)
 	queue_in_name = result_in.method.queue
-	channel_in.queue_bind(exchange='speed_clusters_found',queue=queue_in_name,routing_key='key_speed_clusters_found')
+	channel_in.queue_bind(exchange='auctioning_info',queue=queue_in_name,routing_key='key_auctioning_info')
 
 	# Indicate queue readiness
 	print(' [*] Waiting for messages. To exit, press CTRL+C')
