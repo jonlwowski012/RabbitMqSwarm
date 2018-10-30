@@ -6,5 +6,5 @@ RUN pip install pyyaml
 RUN pip install mysql-connector
 
 ADD config.yaml /
-ADD auctioning.py /
-CMD [ "python", "auctioning.py" ]
+ADD save_speed_clusters.py /
+CMD [ "python", "save_speed_clusters.py" ]
