@@ -18,6 +18,8 @@ import pika
 import yaml
 import json
 import mysql.connector
+import signal
+import sys
 
 ### Read config parameters for mysql
 with open('config.yaml') as f:
@@ -92,7 +94,13 @@ def cmeans_clustering(data, num_boats):
 
 		return centroids,labels,location_array
 
+def close_pika(signal, frame):
+    print('Closing Pika Connection')
+    connection.close()
+    sys.exit(0)
+
 if __name__ == '__main__':
+	signal.signal(signal.SIGTERM, close_pika)
 	# Establish outgoing connection to Clustering
 	connection = pika.BlockingConnection(pika.ConnectionParameters(host=hostname, credentials=credentials, port=port, heartbeat_interval=0, blocked_connection_timeout=600000))
 	channel = connection.channel()

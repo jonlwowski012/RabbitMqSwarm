@@ -13,6 +13,8 @@ import pika
 import time
 import yaml
 import json
+import signal
+import sys
 
 ### Read config parameters for RabbitMQ
 with open('config.yaml') as f:
@@ -55,7 +57,13 @@ def gen_poses():
 		min_x += 25
 		time.sleep(1)
 
+def close_pika(signal, frame):
+    print('Closing Pika Connection')
+    connection.close()
+    sys.exit(0)
+
 if __name__ == '__main__':
+	signal.signal(signal.SIGTERM, close_pika)
 	# Establish outgoing connection to RabbitMQ
 	connection = pika.BlockingConnection(pika.ConnectionParameters(host=hostname,port=port, credentials=credentials))
 	channel = connection.channel()

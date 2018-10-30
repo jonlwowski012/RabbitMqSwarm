@@ -15,7 +15,8 @@ import json
 import numpy as np
 from sklearn import cluster
 import mysql.connector
-
+import signal
+import sys
 
 ### Read config parameters for mysql
 with open('config.yaml') as f:
@@ -100,7 +101,13 @@ def publish_to_mq(clusters, labels, num_people, time_stamp):
 							body=cluster_to_send) 
 		time.sleep(0.01)
 
+def close_pika(signal, frame):
+    print('Closing Pika Connection')
+    connection.close()
+    sys.exit(0)
+    
 if __name__ == '__main__':
+	signal.signal(signal.SIGTERM, close_pika)
 	# Establish outgoing connection to Speed Clustering
 	connection = pika.BlockingConnection(pika.ConnectionParameters(host=hostname, credentials=credentials, port=port, heartbeat_interval=0, blocked_connection_timeout=600000))
 	channel = connection.channel()

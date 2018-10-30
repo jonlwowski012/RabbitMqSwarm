@@ -19,6 +19,8 @@ import copy
 import math
 from collections import defaultdict
 from tsp_solver.greedy import solve_tsp
+import signal
+import sys
 
 ### Read config parameters for mysql
 with open('config.yaml') as f:
@@ -123,11 +125,18 @@ def publish_to_mq(tsp_info, boat_id):
 		channel.basic_publish(exchange='tsp_info',
 						routing_key='key_tsp_info',
 						body=assignment_to_send)
-		print(entry)
+		#print(entry)
 		time.sleep(0.01)
 
 
+def close_pika(signal, frame):
+    print('Closing Pika Connection')
+    connection.close()
+    sys.exit(0)
+
 if __name__ == '__main__':
+	signal.signal(signal.SIGTERM, close_pika)
+
 	# Establish outgoing connection to Auctioning
 	connection = pika.BlockingConnection(pika.ConnectionParameters(host=hostname, credentials=credentials, port=port, heartbeat_interval=0, blocked_connection_timeout=600000))
 	channel = connection.channel()
@@ -136,13 +145,16 @@ if __name__ == '__main__':
 		mycursor.execute("SELECT * FROM boat_info")
 		boat_info = mycursor.fetchall()
 		for boat in boat_info:
+			print(boat)
 			boat_id = boat[5]
-			mycursor.execute("SELECT x_position, y_position, boat_id FROM auction_info WHERE time_stamp = (SELECT MAX(time_stamp) FROM auction_info) AND boat_id=" + str(boat_id) + ";")
+			mycursor.execute("SELECT x_position, y_position, boat_id FROM auction_info WHERE time_stamp = (SELECT MAX(time_stamp) FROM auction_info WHERE boat_id=" + str(boat_id) + ") AND boat_id=" + str(boat_id) + ";")
 			auction_info = mycursor.fetchall()
 			boat_pose =  [boat[1],boat[2]]
-			tsp_paths = np.array(auction_info)[:,0:2]
-			tsp_paths = np.insert(tsp_paths, 0, boat_pose, axis=0)
-			final_path = tsp_solver(np.array(auction_info)[:,0:2])
-			publish_to_mq(final_path, boat_id)
-				
+			if auction_info != []:
+				tsp_paths = np.array(auction_info)[:,0:2]
+				tsp_paths = np.insert(tsp_paths, 0, boat_pose, axis=0)
+				final_path = tsp_solver(np.array(auction_info)[:,0:2])
+				publish_to_mq(final_path, boat_id)
+		mydb.commit()
+					
 
