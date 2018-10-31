@@ -4,5 +4,5 @@ metadata:
   name: clustering
 spec:
   containers:
-    - image: 129.114.111.193:5000/clustering:nompi
+    - image: 129.114.111.193:5000/clustering:nompiv3
       name: clustering
