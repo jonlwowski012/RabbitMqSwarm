@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: speedclusterssaver
+spec:
+  containers:
+    - image: 129.114.111.193:5000/speed_clusters_saver:v1
+      name: speedclusterssaver

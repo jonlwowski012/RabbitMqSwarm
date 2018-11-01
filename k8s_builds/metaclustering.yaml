@@ -4,5 +4,5 @@ metadata:
   name: metaclustering
 spec:
   containers:
-    - image: 129.114.111.193:5000/metaclustering
+    - image: 129.114.111.193:5000/metaclustering:v4
       name: metaclustering
