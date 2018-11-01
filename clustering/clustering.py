@@ -1,9 +1,3 @@
-
-# coding: utf-8
-
-# In[1]:
-
-
 from pyspark.ml.clustering import KMeans
 from pyspark.ml.evaluation import ClusteringEvaluator
 from pyspark.sql import SparkSession
@@ -20,10 +14,6 @@ import mysql.connector
 import signal
 import sys
 import math
-
-
-# In[2]:
-
 
 ### Read config parameters for mysql
 with open('config.yaml') as f:
@@ -52,18 +42,8 @@ with open('config.yaml') as f:
     password = config['password']
     port = config['port']
 credentials = pika.PlainCredentials(username, password)
-
 connection = None
-
-
-# In[3]:
-
-
 spark = SparkSession.builder.appName("KMeansExample").getOrCreate()
-
-
-# In[4]:
-
 
 # Parralel k-means clustering
 def clustering(poses):
@@ -85,10 +65,6 @@ def clustering(poses):
     prediction = model.transform(mydf).select('prediction').collect()
     labels = [p.prediction for p in prediction ]
     return centroids, labels
-
-
-# In[ ]:
-
 
 # Sends locations of clusters found to Rabbit
 def publish_to_mq(clusters, labels, num_people, time_stamp):
@@ -112,18 +88,10 @@ def publish_to_mq(clusters, labels, num_people, time_stamp):
                             body=cluster_to_send) 
         time.sleep(0.01)
 
-
-# In[ ]:
-
-
 def close_pika(signal, frame):
     print('Closing Pika Connection')
     connection.close()
     sys.exit(0)
-
-
-# In[ ]:
-
 
 signal.signal(signal.SIGTERM, close_pika)
 # Establish outgoing connection to Speed Clustering
