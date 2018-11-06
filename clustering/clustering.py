@@ -110,6 +110,7 @@ while(1):
     if len(people_found) > 0:
         num_people = len(people_found)
         t0 = time.time()
+        print("Clustering ",  num_people, " people")
         clusters, labels = clustering(people_found)
         print("Time to Cluster: ", time.time()-t0, " Clusters Found: ", len(clusters))
         publish_to_mq(clusters, labels, num_people, time.strftime('%Y-%m-%d %H:%M:%S'))
