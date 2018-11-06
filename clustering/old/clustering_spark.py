@@ -1,3 +1,7 @@
+from pyspark.ml.clustering import KMeans
+from pyspark.ml.evaluation import ClusteringEvaluator
+from pyspark.sql import SparkSession
+from pyspark.ml.linalg import Vectors
 import numpy as np
 import random
 import matplotlib.pyplot as plt
@@ -39,37 +43,28 @@ with open('config.yaml') as f:
     port = config['port']
 credentials = pika.PlainCredentials(username, password)
 connection = None
+spark = SparkSession.builder.appName("KMeansExample").getOrCreate()
 
 # Parralel k-means clustering
 def clustering(poses):
-	t0 = time.time()
-	location_array = poses
-	flag = False
-	min_inertia = 100000
-	k = 1
-	### while the average cluster radius is greater than 10m
-	while((min_inertia/len(location_array))>= 20 or flag == False):
-		### Calculate Clusters
-		kmeans = cluster.KMeans(init='k-means++', n_init=8, n_clusters=k, random_state=1, n_jobs=-1)
-		kmeans.fit(location_array)
-		min_inertia = kmeans.inertia_
-		flag = True
-		k+= 1
-	### Calculate Clusters
-	centroids_temp = kmeans.cluster_centers_
-	labels = kmeans.labels_
-	inertia = kmeans.inertia_
-
-	### Calculate Radius for Cluster Msg
-	radius = inertia/len(location_array)
-
-	### Calculate Centroids of Clusters
-	centroids = centroids_temp
-
-	### Get Labels for all people's locations
-	labels = kmeans.labels_
-	#print(centroids)
-	return centroids, labels
+    print(len(poses))
+    dff = map(lambda x: (0,(Vectors.dense(x[0:2]))), poses)
+    mydf = spark.createDataFrame(dff,schema=["None","features"])
+    k = 2
+    cost = 99999999999
+    while(cost >= 20):
+        kmeans = KMeans().setK(k).setSeed(1)
+        model = kmeans.fit(mydf)
+        cost = model.computeCost(mydf)/len(poses)
+        k+=1
+        print("K: ", k, " Cost: ", cost)
+    centers = model.clusterCenters()
+    centroids = []
+    for center in centers:
+        centroids.append(center)
+    prediction = model.transform(mydf).select('prediction').collect()
+    labels = [p.prediction for p in prediction ]
+    return centroids, labels
 
 # Sends locations of clusters found to Rabbit
 def publish_to_mq(clusters, labels, num_people, time_stamp):
