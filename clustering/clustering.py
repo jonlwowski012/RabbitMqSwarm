@@ -104,10 +104,12 @@ connection = pika.BlockingConnection(pika.ConnectionParameters(host=hostname, cr
 channel = connection.channel()
 channel.exchange_declare(exchange='clusters_found', exchange_type='direct')
 
+prev_len_people_found = 0
 while(1):
     mycursor.execute("SELECT x_position, y_position FROM people_found")
     people_found = mycursor.fetchall()
-    if len(people_found) > 0:
+    if len(people_found) > 0 and len(people_found)-prev_len_people_found > 10:
+	prev_len_people_found = len(people_found)
         num_people = len(people_found)
         t0 = time.time()
         print("Clustering ",  num_people, " people")

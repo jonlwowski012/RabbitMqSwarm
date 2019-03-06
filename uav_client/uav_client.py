@@ -43,7 +43,7 @@ def gen_poses():
 	
 	min_x = -200
 	while(min_x<200):
-		num_people = int(random.uniform(10,20))
+		num_people = int(random.uniform(1,4))
 		while num_people > 0:
 			x = random.uniform(min_x,min_x+10)
 			y = random.uniform(-200,200)

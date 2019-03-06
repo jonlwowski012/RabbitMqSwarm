@@ -141,16 +141,19 @@ if __name__ == '__main__':
 	connection = pika.BlockingConnection(pika.ConnectionParameters(host=hostname, credentials=credentials, port=port, heartbeat_interval=0, blocked_connection_timeout=600000))
 	channel = connection.channel()
 	channel.exchange_declare(exchange='tsp_info', exchange_type='direct')
+	len_auction = {}
 	while(1):
 		mycursor.execute("SELECT * FROM boat_info")
 		boat_info = mycursor.fetchall()
-		for boat in boat_info:
-			print(boat)
+		for boat_idx, boat in enumerate(boat_info):
 			boat_id = boat[5]
-			mycursor.execute("SELECT x_position, y_position, boat_id FROM auction_info WHERE time_stamp = (SELECT MAX(time_stamp) FROM auction_info WHERE boat_id=" + str(boat_id) + ") AND boat_id=" + str(boat_id) + ";")
+			mycursor.execute("SELECT x_position, y_position, boat_id FROM auction_info WHERE time_stamp = (SELECT MAX(time_stamp) FROM auction_info WHERE boat_id=" + str(boat_id) + ");")
 			auction_info = mycursor.fetchall()
 			boat_pose =  [boat[1],boat[2]]
-			if auction_info != []:
+			if str(boat_id) not in len_auction:
+				len_auction[str(boat_id)] = 0
+			if auction_info != [] and len(auction_info) > len_auction[str(boat_id)]:
+				len_auction[str(boat_id)] = len(auction_info)
 				tsp_paths = np.array(auction_info)[:,0:2]
 				tsp_paths = np.insert(tsp_paths, 0, boat_pose, axis=0)
 				final_path = tsp_solver(np.array(auction_info)[:,0:2])

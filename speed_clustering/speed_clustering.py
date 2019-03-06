@@ -113,10 +113,12 @@ if __name__ == '__main__':
 	channel = connection.channel()
 	channel.exchange_declare(exchange='speed_clusters_found', exchange_type='direct')
 
+	prev_num_people = 0
 	while(1):
 		mycursor.execute("SELECT x_position, y_position FROM people_found")
 		people_found = mycursor.fetchall()
-		if len(people_found) > 0 and len(people_found)%10 == 0:
+		if len(people_found) > 0 and len(people_found)-prev_num_people > 10:
+			prev_num_people = len(people_found)
 			num_people = len(people_found)
 			t0 = time.time()
 			clusters, labels = clustering(people_found)
