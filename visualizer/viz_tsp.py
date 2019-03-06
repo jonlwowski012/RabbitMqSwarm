@@ -41,6 +41,7 @@ prev_id = None
 def callback(ch, method, properties, body):
 	global tsp_count, curr_num_tsp, boat_ids, curr_time, prev_x, prev_y, prev_id
 	tsp_info = json.loads(body.decode('utf-8'))
+	print(tsp_info['boat_id'])
 	if tsp_info['boat_id'] not in boat_ids:
 		boat_ids.append(tsp_info['boat_id'])
 
@@ -48,7 +49,8 @@ def callback(ch, method, properties, body):
 	ax = fig.gca()
 	if prev_id == tsp_info['boat_id']:
 		plt.arrow(prev_x,prev_y,float(tsp_info['x_position'])-prev_x,float(tsp_info['y_position'])-prev_y,
-				 fc=colors[boat_ids.index(tsp_info['boat_id'])%len(colors)], ec=colors[boat_ids.index(tsp_info['boat_id'])%len(colors)])
+				 fc=colors[boat_ids.index(tsp_info['boat_id'])%len(colors)], ec=colors[boat_ids.index(tsp_info['boat_id'])%len(colors)], label=str(tsp_info['boat_id']))
+	
 	plt.scatter(float(tsp_info['x_position']),float(tsp_info['y_position']),c=colors[boat_ids.index(tsp_info['boat_id'])%len(colors)],s=5)
 	prev_x = float(tsp_info['x_position'])
 	prev_y = float(tsp_info['y_position'])
@@ -60,6 +62,7 @@ def callback(ch, method, properties, body):
 		prev_id = None
 		curr_time = tsp_info['time_stamp']
 		plt.draw()
+		plt.legend()
 		plt.pause(0.1)
 		fig.clear()
 
@@ -86,6 +89,7 @@ if __name__ == '__main__':
 
 	# Begin consuming from UAVs
 	plt.draw()
+	plt.legend()
 	plt.pause(0.01)
 	channel_in.start_consuming()
 	
