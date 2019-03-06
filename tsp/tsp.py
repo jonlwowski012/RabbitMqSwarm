@@ -75,7 +75,7 @@ def setup_tsp(clusters):
 		graph_people_locations = Graph()
 		number = 1
 		people_location_array_current = people_location_array
-		#print people_location_array_current
+		print(people_location_array_current)
 		w, h = len(people_location_array_current)+1, len(people_location_array_current)+1
 		cost_mat = [[0 for x in range(w)] for y in range(h)] 
 		graph_people_locations.add_node(str(0))
@@ -147,7 +147,7 @@ if __name__ == '__main__':
 		boat_info = mycursor.fetchall()
 		for boat_idx, boat in enumerate(boat_info):
 			boat_id = boat[5]
-			mycursor.execute("SELECT x_position, y_position, boat_id FROM auction_info WHERE time_stamp = (SELECT MAX(time_stamp) FROM auction_info WHERE boat_id=" + str(boat_id) + ");")
+			mycursor.execute("SELECT x_position, y_position, boat_id FROM auction_info WHERE boat_id=" + str(boat_id) + " AND time_stamp = (SELECT MAX(time_stamp) FROM auction_info);")
 			auction_info = mycursor.fetchall()
 			boat_pose =  [boat[1],boat[2]]
 			if str(boat_id) not in len_auction:
@@ -158,6 +158,6 @@ if __name__ == '__main__':
 				tsp_paths = np.insert(tsp_paths, 0, boat_pose, axis=0)
 				final_path = tsp_solver(np.array(auction_info)[:,0:2])
 				publish_to_mq(final_path, boat_id)
+			mydb.commit()
 		mydb.commit()
-					
 
