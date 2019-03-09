@@ -64,19 +64,20 @@ if __name__ == '__main__':
 
 	mycursor.execute("SELECT time_stamp FROM tsp_info")
 	tspTimes = mycursor.fetchall()
-	print(findHz(tspTimes))
+	print("Avg Hz tsp: ", sum(findHz(tspTimes))/len(findHz(tspTimes)))
 
 	mycursor.execute("SELECT time_stamp FROM clusters_found")
 	clusteringTimes = mycursor.fetchall()
-	print(findHz(clusteringTimes))
+	#print("Avg Hz clustering: ", sum(findHz(clusteringTimes))/len(findHz(clusteringTimes)))
 
 	mycursor.execute("SELECT time_stamp FROM speed_clusters_found")
 	speedClusteringTimes = mycursor.fetchall()
+	print("Avg Hz speed clustering: ", sum(findHz(speedClusteringTimes))/len(findHz(speedClusteringTimes)))
 
 	mycursor.execute("SELECT time_stamp FROM auction_info")
 	auctioningTimes = mycursor.fetchall()
-	print(findHz(auctioningTimes))
+	print("Avg Hz auction: ", sum(findHz(auctioningTimes))/len(findHz(auctioningTimes)))
 
 	mycursor.execute("SELECT time_stamp FROM people_found")
 	peopleTimes = mycursor.fetchall()
-	print(findHz(peopleTimes))
+	print("Avg Hz people: ", sum(findHz(peopleTimes))/len(findHz(peopleTimes)))
