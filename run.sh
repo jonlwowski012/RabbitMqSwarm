@@ -5,6 +5,7 @@ xterm -T boat_info_saver -hold -e sudo docker run -it --name boat_info_saver boa
 xterm -T metaclustering_saver -hold -e sudo docker run -it --name metaclusters_saver metaclusters_saver &
 xterm -T people_saver -hold -e sudo docker run -it --name people_saver people_saver &
 xterm -T speed_clustering_saver -hold -e sudo docker run -it --name speed_clusters_saver speed_clusters_saver &
+xterm -T clustering_saver -hold -e sudo docker run -it --name clusters_saver clusters_saver &
 xterm -T tsp_saver -hold -e sudo docker run -it --name tsp_saver tsp_saver &
 sleep 5
 

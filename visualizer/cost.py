@@ -68,7 +68,7 @@ if __name__ == '__main__':
 
 	mycursor.execute("SELECT time_stamp FROM clusters_found")
 	clusteringTimes = mycursor.fetchall()
-	#print("Avg Hz clustering: ", sum(findHz(clusteringTimes))/len(findHz(clusteringTimes)))
+	print("Avg Hz clustering: ", sum(findHz(clusteringTimes))/len(findHz(clusteringTimes)))
 
 	mycursor.execute("SELECT time_stamp FROM speed_clusters_found")
 	speedClusteringTimes = mycursor.fetchall()

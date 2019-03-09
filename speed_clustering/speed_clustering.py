@@ -57,7 +57,7 @@ def clustering(poses):
 	min_inertia = 100000
 	k = 1
 	### while the average cluster radius is greater than 10m
-	while((min_inertia/len(location_array))>= 20 or flag == False):
+	while(((min_inertia/len(location_array))>= 20 or flag == False) and len(location_array) >= k):
 		### Calculate Clusters
 		kmeans = cluster.MiniBatchKMeans(init='k-means++', n_init=10, n_clusters=k, random_state=1, tol=1.0, max_no_improvement=5, reassignment_ratio=0.001, max_iter=100)
 		kmeans.fit(location_array)

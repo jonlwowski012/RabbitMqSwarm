@@ -48,7 +48,7 @@ def clustering(poses):
 	min_inertia = 100000
 	k = 1
 	### while the average cluster radius is greater than 10m
-	while((min_inertia/len(location_array))>= 20 or flag == False):
+	while((min_inertia/len(location_array))>= 20 or flag == False and len(location_array) >= k):
 		### Calculate Clusters
 		kmeans = cluster.KMeans(init='k-means++', n_init=8, n_clusters=k, random_state=1, n_jobs=-1)
 		kmeans.fit(location_array)
@@ -106,15 +106,15 @@ channel.exchange_declare(exchange='clusters_found', exchange_type='direct')
 
 prev_len_people_found = 0
 while(1):
-    mycursor.execute("SELECT x_position, y_position FROM people_found")
-    people_found = mycursor.fetchall()
-    if len(people_found) > 0 and len(people_found)-prev_len_people_found > 10:
-	prev_len_people_found = len(people_found)
-        num_people = len(people_found)
-        t0 = time.time()
-        print("Clustering ",  num_people, " people")
-        clusters, labels = clustering(people_found)
-        print("Time to Cluster: ", time.time()-t0, " Clusters Found: ", len(clusters))
-        publish_to_mq(clusters, labels, num_people, time.strftime('%Y-%m-%d %H:%M:%S'))
-    mydb.commit()
+	mycursor.execute("SELECT x_position, y_position FROM people_found")
+	people_found = mycursor.fetchall()
+	if len(people_found) > 0 and len(people_found)-prev_len_people_found > 10:
+		prev_len_people_found = len(people_found)
+		num_people = len(people_found)
+		t0 = time.time()
+		print("Clustering ",  num_people, " people")
+		clusters, labels = clustering(people_found)
+		print("Time to Cluster: ", time.time()-t0, " Clusters Found: ", len(clusters))
+		publish_to_mq(clusters, labels, num_people, time.strftime('%Y-%m-%d %H:%M:%S'))
+	mydb.commit()
 

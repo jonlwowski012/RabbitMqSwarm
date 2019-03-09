@@ -114,7 +114,7 @@ if __name__ == '__main__':
         clusters_found = mycursor.fetchall()
         mycursor.execute("SELECT * FROM boat_info")
         num_boats = len(mycursor.fetchall())
-        if len(clusters_found) > prev_len and num_boats > 0:
+        if len(clusters_found) > prev_len and num_boats > 0 and len(clusters_found)>=num_boats:
             prev_len = len(clusters_found)
             if curr_time != clusters_found[0][3]:
                 curr_time = clusters_found[0][3]
