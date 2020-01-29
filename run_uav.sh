@@ -1,8 +1,8 @@
 #!/bin/bash
-UAVS=10
+UAVS=2
 for i in `seq 1 $UAVS`;
 do
-	xterm -e sudo docker run -it --name uav_client_$i uav_client &
+	xterm -T uav_client_$i -hold -e sudo docker run -it --name uav_client_$i uav_client &
 	echo uav_client_$i
 done
 #xterm -e sudo docker run -it --name asv_client2 asv_client &

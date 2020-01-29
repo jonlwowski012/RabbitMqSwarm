@@ -122,7 +122,7 @@ def close_pika(signal, frame):
 if __name__ == '__main__':
 	signal.signal(signal.SIGTERM, close_pika)
 	# Establish outgoing connection to Auctioning
-	connection = pika.BlockingConnection(pika.ConnectionParameters(host=hostname, credentials=credentials, port=port, heartbeat_interval=0, blocked_connection_timeout=600000))
+	connection = pika.BlockingConnection(pika.ConnectionParameters(host=hostname, credentials=credentials, port=port,  blocked_connection_timeout=600000))
 	channel = connection.channel()
 	channel.exchange_declare(exchange='auctioning_info', exchange_type='direct')
 	curr_time = None

@@ -63,7 +63,7 @@ if __name__ == '__main__':
 	connection_in = pika.BlockingConnection(pika.ConnectionParameters(host=hostname, credentials=credentials, port=port))
 	channel_in = connection_in.channel()
 	channel_in.exchange_declare(exchange='tsp_info', exchange_type='direct')
-	result_in = channel_in.queue_declare(exclusive=True)
+	result_in = channel_in.queue_declare(queue="",exclusive=True)
 	queue_in_name = result_in.method.queue
 	channel_in.queue_bind(exchange='tsp_info',queue=queue_in_name,routing_key='key_tsp_info')
 
@@ -71,7 +71,7 @@ if __name__ == '__main__':
 	print(' [*] Waiting for messages. To exit, press CTRL+C')
 
 	# Consumption configuration
-	channel_in.basic_consume(callback,queue=queue_in_name,no_ack=False)
+	channel_in.basic_consume(on_message_callback=callback,queue=queue_in_name)
 
 	# Begin consuming from speed clusters
 	channel_in.start_consuming()

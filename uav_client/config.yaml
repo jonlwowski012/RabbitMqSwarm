@@ -1,4 +1,10 @@
-hostname: 129.114.111.193
-username: yellow
-password: test5243
+hostname: 192.168.1.102
+username: ace
+password: ace$123
 port: 5672
+mysql_hostname: 192.168.1.102
+mysql_username: lambda
+mysql_password: test5243
+mysql_database: lambda
+mysql_port: 3306
+

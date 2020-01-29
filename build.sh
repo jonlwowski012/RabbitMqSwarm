@@ -1,4 +1,6 @@
 #!/bin/bash
+echo */config.yaml | xargs -n 1 \cp -v config.yaml
+echo sql_savers/*/config.yaml | xargs -n 1 \cp -v config.yaml
 
 sudo docker build -t asv_client asv_client
 sudo docker build -t auctioning auctioning

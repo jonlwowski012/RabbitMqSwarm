@@ -100,7 +100,7 @@ def close_pika(signal, frame):
 
 signal.signal(signal.SIGTERM, close_pika)
 # Establish outgoing connection to Speed Clustering
-connection = pika.BlockingConnection(pika.ConnectionParameters(host=hostname, credentials=credentials, port=port, heartbeat_interval=0, blocked_connection_timeout=600000))
+connection = pika.BlockingConnection(pika.ConnectionParameters(host=hostname, credentials=credentials, port=port, heartbeat=600, blocked_connection_timeout=600000))
 channel = connection.channel()
 channel.exchange_declare(exchange='clusters_found', exchange_type='direct')
 
