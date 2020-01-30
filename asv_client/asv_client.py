@@ -59,7 +59,6 @@ if __name__ == '__main__':
 	boat_capacity = random.uniform(10,150)
 	boat_location_x = random.uniform(-300,-250)
 	boat_location_y = random.uniform(-200,200)
-	
-	publish_to_mq(boat_location_x, boat_location_y, boat_speed, boat_capacity, boat_id)
 
+	publish_to_mq(boat_location_x, boat_location_y, boat_speed, boat_capacity, boat_id)
 
